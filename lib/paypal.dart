@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:firebase/firebase.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart';
 import 'package:http_auth/http_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:project_teague_console/project_objects.dart';
 
 class Paypal {
@@ -123,15 +126,26 @@ class Paypal {
     
     if (response.statusCode == 200) {
       List invoices = json.decode(response.body)["items"];
+      print(invoices);
       for (var jsonInvoice in invoices) {
         Invoice? invoice = await Invoice.toInvoice(jsonInvoice);
         if(invoice != null && (invoice.status != InvoiceStatus.other && invoice.status != InvoiceStatus.cancelled)) {
-          if(invoice.status == InvoiceStatus.inProgress) {
+          if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.sent) {
 
             var detailedInvObj = json.decode((await client.get(invoice.url)).body);
 
-            invoice.paid = double.parse(detailedInvObj["payments"]["paid_amount"]["value"]);
-            
+            if(invoice.status == InvoiceStatus.inProgress)
+            {
+              invoice.paid = double.parse(detailedInvObj["payments"]["paid_amount"]["value"]);
+              var transactions = detailedInvObj["payments"]["transactions"];
+              for (var payment in transactions) {
+                invoice.payments.add(Payment.fromMap(payment));
+              }
+            }
+            else {
+              invoice.paid = 0;
+            }
+
             for (var item in detailedInvObj["items"]) {
               switch (item["name"]) {
                 case "Child Assessement":
@@ -145,14 +159,10 @@ class Paypal {
                     member!.id = id;
                   });
                   invoice.items.addMember(member);
+                  print(invoice.items.createItemList());
                   break;
                 default:
               }
-            }
-
-            var transactions = detailedInvObj["payments"]["transactions"];
-            for (var payment in transactions) {
-              invoice.payments.add(Payment.fromMap(payment));
             }
 
           }
@@ -165,6 +175,49 @@ class Paypal {
       onError.call(response.statusCode.toString(), response.reasonPhrase.toString());
     }
 
+  }
+
+  Future<Response> update(Uri url, double amt) async {
+
+    return client.post(Uri.parse("${url.toString()}/payments"),
+      headers: {"Content-Type": "application/json",},
+      body: json.encode({
+        "method": "BANK_TRANSFER",
+        "payment_date": DateFormat("yyyy-MM-dd").format(DateTime.now()),
+        "amount": {
+          "currency_code": "USD",
+          "value": amt.toStringAsFixed(2)
+        }
+      })
+    );
+
+  }
+
+  Future sendReminder(BuildContext context, Invoice inv, void Function(String errorCode, String error) onError) async {
+
+    var reminderResponse = await client.post(Uri.parse('$domain/v2/invoicing/invoices/${inv.id}/remind'),
+      headers: {"Content-Type": "application/json",},
+      body: json.encode({
+        "subject": "Reminder: Payment due for Teague Reunion - Inv#${inv.invNum}",
+        "note": "Please pay before the due date of July 01, 2022",
+        "send_to_invoicer": true,   
+        "additional_recipients": [
+          "8.tpledger@kscholars.org",
+          "pledgerm2@yahoo.com"
+        ]
+      })
+    );
+
+    if(reminderResponse.statusCode != 200 | 204) {
+      return onError.call(reminderResponse.statusCode.toString(), reminderResponse.reasonPhrase.toString());
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Reminder successfully sent!"),
+        duration: Duration(seconds: 4),
+      )
+    );
+      
   }
 
 }

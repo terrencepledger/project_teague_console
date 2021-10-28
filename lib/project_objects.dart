@@ -1,7 +1,16 @@
-import 'dart:convert';
+// ignore_for_file: constant_identifier_names
 
 import 'package:firebase/firebase.dart';
 import 'package:intl/intl.dart';
+
+enum TshirtSize { 
+  Youth_XS, Youth_S, Youth_M, Youth_L, Youth_XL,
+  S, M, L, XL, XXL, XXXL, XXXXL
+}
+
+enum TshirtColor {
+  Orange, Blue, Grey
+}
 
 enum Activity {
   // ignore: constant_identifier_names
@@ -51,20 +60,26 @@ class AssessmentStatus {
     Map<String, dynamic> object = {};
     
     object['created'] = assessmentStatus.created;
-    object['invoiceId'] = assessmentStatus.invoiceId;
+
+    if(assessmentStatus.created) {
+      object['invoiceId'] = assessmentStatus.invoiceId;
+    }
 
     return object;
 
   }
 
   static AssessmentStatus toAssessmentStatus(Map<String, dynamic> object) {
-    
+
     bool created = object['created'];
-    String invoiceId = object["invoiceId"];
 
     AssessmentStatus ret = AssessmentStatus();
+
     ret.created = created;
-    ret.invoiceId = invoiceId;
+    if(created) {
+      String invoiceId = object["invoiceId"];
+      ret.invoiceId = invoiceId;
+    }
 
     return ret; 
 
@@ -199,7 +214,7 @@ class InvoiceItems{
       Map<String, Object> temp = {}; 
 
       temp["name"] = theMember!.name + " assessment";
-      temp["description"] = "One family member assessment at " + theMember.tier.toString().split('.').last + " price.";
+      temp["description"] = theMember.tier.toString().split('.').last + " assessment for " + theMember.name;
       temp["quantity"] = "1";
       temp["unit_amount"] = {
         "currency_code": "USD",
@@ -312,6 +327,15 @@ class InvoiceItems{
 
 }
 
+class TshirtOptions {
+
+  TshirtSize size;
+  TshirtColor color;
+
+  TshirtOptions(this.size, this.color);
+
+}
+
 class FamilyMember{
 
   late String id;
@@ -324,6 +348,7 @@ class FamilyMember{
   late Age age;
   late FamilyMemberTier tier;
   AssessmentStatus assessmentStatus = AssessmentStatus();
+  TshirtOptions? tshirt;
 
   bool registered = false;
 
@@ -360,6 +385,14 @@ class FamilyMember{
     };
     object['phone'] = member.phone;
     object['dob'] = member.dob.millisecondsSinceEpoch;
+    object['assessmentStatus'] = AssessmentStatus.toMap(member.assessmentStatus);
+
+    if(member.tshirt != null) {
+      object["tshirtOptions"] = { 
+        "size": member.tshirt!.size.toString().split('.')[1].split('_').join(" "),
+        "color": member.tshirt!.color.toString().split('.')[1]
+      };
+    }
 
     return object;
 
@@ -379,6 +412,23 @@ class FamilyMember{
     AssessmentStatus assessmentStatus = AssessmentStatus.toAssessmentStatus(object["assessmentStatus"]);
 
     FamilyMember ret = FamilyMember(name, email, location, dob);
+    
+    if(object.containsKey("tshirtOptions")) {
+      dynamic tshirtOptions = object["tshirtOptions"];
+      TshirtSize size = TshirtSize.values.firstWhere(
+        (e) {
+          String temp = tshirtOptions['size'].toString();
+          if(temp.contains(" ")) {
+            temp = temp.split(' ').join("_");
+          }
+          return e.toString() == ("TshirtSize." + temp); 
+        }
+      );
+      TshirtColor color = TshirtColor.values.firstWhere((element) => 
+        element.toString() == "TshirtColor." + tshirtOptions["color"].toString()
+      );
+      ret.tshirt = TshirtOptions(size, color);
+    }
     ret.assessmentStatus = assessmentStatus;
     ret.addPhone(phone);
 

@@ -142,7 +142,7 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                                   });
                                 }
                                 _setUpController(false);
-                                Navigator.pop(context);
+                                // Navigator.pop(context);
                               }
                             },
                           )
@@ -202,9 +202,10 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                               });
                             }
 
-                            // _setUpController(false);
+                            _setUpController(false);
                             // Navigator.pop(context);
-                          }),
+                          }
+                          ),
                         showDetailsArrows: widget.showDetailsArrows,
                         previous: () {
                           if (mounted) {
@@ -236,6 +237,7 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
             sectionIndex: _sectionIndex,
             sectionChanged: (context, index) {
               if (_sectionIndex != index) {
+                
                 if (mounted) {
                   setState(() {
                     _sectionIndex = index;
@@ -274,7 +276,7 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                               });
                             }
 
-                            // _setUpController(false);
+                            _setUpController(false);
                             // Navigator.pop(context);
                           });
                     return DetailsView(

@@ -4,6 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:project_teague_console/paypal.dart';
 import 'package:project_teague_console/project_objects.dart';
@@ -134,22 +137,6 @@ class _MyHomePageState extends State<MyHomePage> {
       title: const Text('Navigation'),
       showDetailsArrows: true,
       backgroundColor: Colors.grey[100],
-      bottomAppBar: BottomAppBar(
-        elevation: 1,
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(
-                Icons.filter_list,
-                color: Colors.transparent,
-              ),
-              onPressed: () {
-                //TODO add filtering capability
-              },
-            ),
-          ],
-        ),
-      ),
       sections: [
         MainSection(
           label: const Text('Assessments'),
@@ -178,17 +165,6 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             );
           },
-          bottomAppBar: BottomAppBar(
-            elevation: 1,
-            child: Row(
-              children: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-          ),
           getDetails: (context, index, func) {
             if(invoices.isEmpty) {
               return DetailsWidget(
@@ -413,16 +389,106 @@ class _MyHomePageState extends State<MyHomePage> {
                               )
                             ),
                             child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Payment List:", 
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold
+                                Stack(
+                                  alignment: AlignmentDirectional.center,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      // ignore: prefer_const_literals_to_create_immutables
+                                      children: const [
+                                        Expanded(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text(
+                                              "Payment List:", 
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(15.0),
+                                        child: Tooltip(
+                                          message: "Manual Entry",
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.add_circle_outline_rounded
+                                            ),
+                                            onPressed: () async {
+                                              TextEditingController textController = TextEditingController();
+                                              await showDialog(
+                                                context: context, 
+                                                builder: (context) {
+                                                  return Dialog(
+                                                    child: StatefulBuilder(
+                                                      builder: (BuildContext context, setState2) {
+                                                        return Padding(
+                                                          padding: const EdgeInsets.all(8.0),
+                                                          child: Container(
+                                                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 3),
+                                                            child: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children:  [
+                                                                Padding(
+                                                                  padding: const EdgeInsets.all(8.0),
+                                                                  child: TextFormField(
+                                                                    controller: textController,
+                                                                    inputFormatters: <TextInputFormatter>[
+                                                                      FilteringTextInputFormatter.allow(RegExp(r'^(?=\D*(?:\d\D*){1,12}$)\d+(?:\.\d{0,4})?$')),
+                                                                    ],
+                                                                    // keyboardType: const TextInputType.numberWithOptions(signed: true),
+                                                                    decoration: const InputDecoration(
+                                                                      labelText: "Enter Payment Amount (negative allowed)"
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                Padding(
+                                                                  padding: const EdgeInsets.all(8.0),
+                                                                  child: ElevatedButton.icon(
+                                                                    onPressed: () async {
+                                                                      double amt = double.parse(textController.text);
+                                                                      Response res = await paypal.update(invoices.elementAt(index).url, amt);
+                                                                      String msg;
+                                                                      if(res.statusCode != 200) {
+                                                                        msg = "Unable to enter payment: ${res.statusCode} - ${res.reasonPhrase}";
+                                                                      }
+                                                                      else {
+                                                                        msg = "Successfully Entered";
+                                                                      }
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        SnackBar(
+                                                                          content: Text(msg)
+                                                                        )
+                                                                      );
+                                                                    }, 
+                                                                    icon: const Icon(Icons.check),
+                                                                    label: const Text("Submit")
+                                                                  ),
+                                                                )
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  );
+                                                }
+                                              );
+                                            } 
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ]
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(20.0),
@@ -447,21 +513,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ),
                                       ...
                                       List.generate(invoices.elementAt(index).payments.length, 
-                                        (index) => TableRow(
+                                        (index2) => TableRow(
                                           children: [
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text(invoices.elementAt(index).payments.elementAt(index).id)),
+                                              child: Center(child: Text(invoices.elementAt(index).payments.elementAt(index2).id)),
                                             ),
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: Center(child: Text(DateFormat("MM-dd-yyyy").format(
-                                                invoices.elementAt(index).payments.elementAt(index).date
+                                                invoices.elementAt(index).payments.elementAt(index2).date
                                               ))),
                                             ),
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text("\$${invoices.elementAt(index).payments.elementAt(index).amt.toStringAsFixed(2)}")),
+                                              child: Center(child: Text("\$${invoices.elementAt(index).payments.elementAt(index2).amt.toStringAsFixed(2)}")),
                                             )
                                           ]
                                         )
@@ -476,6 +542,28 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          paypal.sendReminder(context, invoices.elementAt(index), 
+                            (String code, String reason) {
+                              ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                                SnackBar(
+                                  content: Text("Unable to Send Reminder. Contact Terrence Pledger with code $code - $reason"),
+                                  duration: const Duration(seconds: 8),
+                                )
+                              );
+                            }
+                          );
+                        }, 
+                        icon: const Icon(Icons.check),
+                        label: const Text("Send Reminder")
+                      ),
+                    ),
+                  )
                 ],
               ),
             );
@@ -493,9 +581,22 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               selected: selected,
               title: Text(members.elementAt(index).name),
-              subtitle: Text("${members.elementAt(index).name} ${members.elementAt(index).assessmentStatus.created ? "HAS" : "has NOT" } begun paying their assessment"),
+              subtitle: Text(
+                "${members.elementAt(index).name} ${members.elementAt(index).assessmentStatus.created ? 'HAS' : 'has NOT' } begun paying their assessment"
+              ),
             );
           },
+          bottomAppBar: BottomAppBar(
+            elevation: 1,
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
           getDetails: (context, index, func) {
             if(index > members.length - 1) {index = 0;}
             return DetailsWidget(
@@ -601,7 +702,73 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           // const Spacer()
                         ],
-                      )
+                      ),
+                      Column(
+                        children: [
+                          Text("Tshirt Options", style: Theme.of(context).textTheme.headline5,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: DropdownButton(
+                                  hint: const Text("Select Size"),
+                                  value: members.elementAt(index).tshirt?.size,
+                                  dropdownColor: Colors.white,
+                                  style: const TextStyle(color: Colors.black),
+                                  items: List.generate(TshirtSize.values.length, (index) {
+                                    return DropdownMenuItem<TshirtSize>(
+                                      value: TshirtSize.values.elementAt(index), 
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          TshirtSize.values.elementAt(index).toString().split('.')[1].split("_").join(" "),
+                                          style: const TextStyle(
+                                            color: Colors.black
+                                          ),
+                                        ),
+                                      )
+                                    );
+                                  }),
+                                  onChanged: (newSize) {
+                                    setState(() {
+                                      members.elementAt(index).tshirt!.size = newSize as TshirtSize;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: DropdownButton(
+                                  hint: const Text("Select Color"),
+                                  value: members.elementAt(index).tshirt?.color,
+                                  dropdownColor: Colors.white,
+                                  style: const TextStyle(color: Colors.black),
+                                  items: List.generate(TshirtColor.values.length, (index) {
+                                    return DropdownMenuItem<TshirtColor>(
+                                      value: TshirtColor.values.elementAt(index), 
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          TshirtColor.values.elementAt(index).toString().split('.')[1],
+                                          style: const TextStyle(
+                                            color: Colors.black
+                                          ),
+                                        ),
+                                      )
+                                    );
+                                  }),
+                                  onChanged: (newColor) {
+                                    setState(() {
+                                      members.elementAt(index).tshirt!.color = newColor as TshirtColor;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   key: formKeys.elementAt(index),
