@@ -705,7 +705,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       Column(
                         children: [
-                          Text("Tshirt Options", style: Theme.of(context).textTheme.headline5,),
+                          Text("Tshirt Size", style: Theme.of(context).textTheme.headline5,),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -713,7 +713,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: DropdownButton(
                                   hint: const Text("Select Size"),
-                                  value: members.elementAt(index).tshirt?.size,
+                                  value: members.elementAt(index).tSize,
                                   dropdownColor: Colors.white,
                                   style: const TextStyle(color: Colors.black),
                                   items: List.generate(TshirtSize.values.length, (index) {
@@ -732,35 +732,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   }),
                                   onChanged: (newSize) {
                                     setState(() {
-                                      members.elementAt(index).tshirt!.size = newSize as TshirtSize;
-                                    });
-                                  },
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: DropdownButton(
-                                  hint: const Text("Select Color"),
-                                  value: members.elementAt(index).tshirt?.color,
-                                  dropdownColor: Colors.white,
-                                  style: const TextStyle(color: Colors.black),
-                                  items: List.generate(TshirtColor.values.length, (index) {
-                                    return DropdownMenuItem<TshirtColor>(
-                                      value: TshirtColor.values.elementAt(index), 
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          TshirtColor.values.elementAt(index).toString().split('.')[1],
-                                          style: const TextStyle(
-                                            color: Colors.black
-                                          ),
-                                        ),
-                                      )
-                                    );
-                                  }),
-                                  onChanged: (newColor) {
-                                    setState(() {
-                                      members.elementAt(index).tshirt!.color = newColor as TshirtColor;
+                                      members.elementAt(index).tSize = newSize as TshirtSize;
                                     });
                                   },
                                 ),

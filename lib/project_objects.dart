@@ -327,15 +327,6 @@ class InvoiceItems{
 
 }
 
-class TshirtOptions {
-
-  TshirtSize size;
-  TshirtColor color;
-
-  TshirtOptions(this.size, this.color);
-
-}
-
 class FamilyMember{
 
   late String id;
@@ -348,7 +339,7 @@ class FamilyMember{
   late Age age;
   late FamilyMemberTier tier;
   AssessmentStatus assessmentStatus = AssessmentStatus();
-  TshirtOptions? tshirt;
+  TshirtSize? tSize;
 
   bool registered = false;
 
@@ -387,11 +378,8 @@ class FamilyMember{
     object['dob'] = member.dob.millisecondsSinceEpoch;
     object['assessmentStatus'] = AssessmentStatus.toMap(member.assessmentStatus);
 
-    if(member.tshirt != null) {
-      object["tshirtOptions"] = { 
-        "size": member.tshirt!.size.toString().split('.')[1].split('_').join(" "),
-        "color": member.tshirt!.color.toString().split('.')[1]
-      };
+    if(member.tSize != null) {
+      object["tSize"] = member.tSize.toString().split('.')[1].split('_').join(" ");
     }
 
     return object;
@@ -413,21 +401,17 @@ class FamilyMember{
 
     FamilyMember ret = FamilyMember(name, email, location, dob);
     
-    if(object.containsKey("tshirtOptions")) {
-      dynamic tshirtOptions = object["tshirtOptions"];
+    if(object.containsKey("tSize")) {
       TshirtSize size = TshirtSize.values.firstWhere(
         (e) {
-          String temp = tshirtOptions['size'].toString();
+          String temp = object['tSize'].toString();
           if(temp.contains(" ")) {
             temp = temp.split(' ').join("_");
           }
           return e.toString() == ("TshirtSize." + temp); 
         }
       );
-      TshirtColor color = TshirtColor.values.firstWhere((element) => 
-        element.toString() == "TshirtColor." + tshirtOptions["color"].toString()
-      );
-      ret.tshirt = TshirtOptions(size, color);
+      ret.tSize = size;
     }
     ret.assessmentStatus = assessmentStatus;
     ret.addPhone(phone);
