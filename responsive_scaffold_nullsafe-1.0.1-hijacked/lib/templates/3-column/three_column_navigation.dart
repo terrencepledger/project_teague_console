@@ -9,6 +9,7 @@ import 'common/index.dart';
 class ThreeColumnNavigation extends StatefulWidget {
   ThreeColumnNavigation({
     Key? key,
+    this.updateFunc,
     required this.sections,
     this.showDetailsArrows = true,
     this.expandedIconData = Icons.fullscreen_exit,
@@ -26,6 +27,7 @@ class ThreeColumnNavigation extends StatefulWidget {
   List<MainSection> sections;
   final bool showDetailsArrows;
   final Text? title;
+  final Function? updateFunc;
 
   @override
   _ThreeColumnNavigationState createState() => _ThreeColumnNavigationState();
@@ -113,7 +115,9 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                         sections: widget.sections,
                         sectionIndex: _sectionIndex,
                         sectionTap: (index) {
+                          widget.updateFunc?.call();
                           if (_sectionIndex != index) {
+                            _listIndex = 0;
                             if (mounted) {
                               setState(() {
                                 _sectionIndex = index;
@@ -237,13 +241,11 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
             sectionIndex: _sectionIndex,
             sectionChanged: (context, index) {
               if (_sectionIndex != index) {
-                
                 if (mounted) {
                   setState(() {
                     _sectionIndex = index;
                   });
                 }
-
                 _setUpController(false);
                 Navigator.pop(context);
               }

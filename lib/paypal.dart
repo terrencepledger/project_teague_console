@@ -126,7 +126,6 @@ class Paypal {
     
     if (response.statusCode == 200) {
       List invoices = json.decode(response.body)["items"];
-      print(invoices);
       for (var jsonInvoice in invoices) {
         Invoice? invoice = await Invoice.toInvoice(jsonInvoice);
         if(invoice != null && (invoice.status != InvoiceStatus.other && invoice.status != InvoiceStatus.cancelled)) {
@@ -148,10 +147,9 @@ class Paypal {
 
             for (var item in detailedInvObj["items"]) {
               switch (item["name"]) {
-                case "Child Assessement":
+                case "Child Assessment":
                 case "Adult Assessment":
                   var split = item["description"].toString().split(': ').last.split(" (");
-                  String name = split.first;
                   String id = split.last.split(')').first;
                   FamilyMember? member;
                   await database().ref("members").child(id).once('value').then((value) async {
@@ -159,7 +157,6 @@ class Paypal {
                     member!.id = id;
                   });
                   invoice.items.addMember(member);
-                  print(invoice.items.createItemList());
                   break;
                 default:
               }
@@ -182,7 +179,7 @@ class Paypal {
     return client.post(Uri.parse("${url.toString()}/payments"),
       headers: {"Content-Type": "application/json",},
       body: json.encode({
-        "method": "BANK_TRANSFER",
+        "method": "OTHER",
         "payment_date": DateFormat("yyyy-MM-dd").format(DateTime.now()),
         "amount": {
           "currency_code": "USD",

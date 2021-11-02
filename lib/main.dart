@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Invoice> invoices = [];
 
   List<GlobalKey<FormState>> formKeys = [];
-  List<DateTime> dobs = [];
+  Map<FamilyMember, DateTime> dobs = {};
   
   var sKey = GlobalKey<ScaffoldState>();
 
@@ -80,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
           FamilyMember member = FamilyMember.toMember(child.val());
           member.id = child.key;
           members.add(member);
-          dobs.add(member.dob);
+          dobs[member] = member.dob;
           members.sort(
             (a, b) {
               var aReversedName = a.name.split(' ').last + a.name.split(' ').first;
@@ -99,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
     paypal.getInvoices(
       (List<Invoice> temp) {
         setState(() {
-          invoices.addAll(temp);
+          invoices = temp;
         });
       },
       (String code, String reason) {
@@ -114,10 +114,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<void> selectDOB(int index) async {
+  Future<void> selectDOB(int index) async { 
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: dobs.elementAt(index),
+      initialDate: dobs[members.elementAt(index)] as DateTime,
       lastDate: DateTime.now(),
       firstDate: DateTime.fromMillisecondsSinceEpoch(-2208967200000)
     );
@@ -125,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
     DateTime today = DateTime(now.year, now.month, now.day);
     if (picked != null && picked != today) {
       setState(() {
-        dobs[index] = picked;
+        dobs[members.elementAt(index)] = picked;
         members.elementAt(index).dob = picked;
       });
     }
@@ -134,6 +134,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return ThreeColumnNavigation(
+      updateFunc: () {
+        loadMembers();
+        loadInvoices();
+      },
       title: const Text('Navigation'),
       showDetailsArrows: true,
       backgroundColor: Colors.grey[100],
@@ -343,12 +347,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ),
                                       ...
                                       List.generate(invoices.elementAt(index).items.createItemList().length, 
-                                        (index) => TableRow(
+                                        (memberIndex) => TableRow(
                                           children: [
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: Center(child: Text(
-                                                invoices.elementAt(index).items.createItemList().elementAt(index)["description"].toString().split("2022 ").last,
+                                                invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("2022 ").last,
                                                 textAlign: TextAlign.center,
                                                 style: const TextStyle(color: Colors.black),
                                               )),
@@ -356,7 +360,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: Center(child: Text(
-                                                "\$" + double.parse((invoices.elementAt(index).items.createItemList().elementAt(index)["unit_amount"] as Map)["value"].toString()).toStringAsFixed(2),
+                                                "\$" + double.parse((invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["unit_amount"] as Map)["value"].toString()).toStringAsFixed(2),
                                                 textAlign: TextAlign.center,
                                                 style: const TextStyle(color: Colors.black),
                                               )),
@@ -570,7 +574,7 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
         MainSection(
-          label: const Text('Directory'),
+          label: const Text('Users'),
           icon: const Icon(Icons.people),
           itemCount: members.length,
           itemBuilder: (context, index, selected) {
@@ -582,7 +586,7 @@ class _MyHomePageState extends State<MyHomePage> {
               selected: selected,
               title: Text(members.elementAt(index).name),
               subtitle: Text(
-                "${members.elementAt(index).name} ${members.elementAt(index).assessmentStatus.created ? 'HAS' : 'has NOT' } begun paying their assessment"
+                "${members.elementAt(index).name} ${members.elementAt(index).assessmentStatus.created ? 'IS' : 'is NOT' } registered"
               ),
             );
           },
@@ -605,8 +609,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 IconButton(
                   icon: const Icon(Icons.info),
                   onPressed: () {
-                    String currentId = members.elementAt(index).id;
-                    Invoice inv = invoices.firstWhere((invoice) => invoice.hoh!.id == currentId);
+                    Invoice inv = invoices.firstWhere((invoice) => invoice.items.tickets.contains(members.elementAt(index)));
                     int invIndex = invoices.indexOf(inv);
                     func.call(0, invIndex);
                   },
@@ -697,7 +700,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             padding: const EdgeInsets.all(30.0),
                             child: ElevatedButton(
                               onPressed: () {selectDOB(index);}, 
-                              child: Text("DOB: " + DateFormat("MMM dd, yyyy").format(dobs.elementAt(index)))
+                              child: Text("DOB: " + DateFormat("MMM dd, yyyy").format(dobs[members.elementAt(index)] as DateTime))
                             ),
                           ),
                           // const Spacer()

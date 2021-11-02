@@ -2,6 +2,7 @@
 
 import 'package:firebase/firebase.dart';
 import 'package:intl/intl.dart';
+import 'package:quiver/core.dart';
 
 enum TshirtSize { 
   Youth_XS, Youth_S, Youth_M, Youth_L, Youth_XL,
@@ -27,7 +28,7 @@ enum InvoiceStatus {
 
 enum FamilyMemberTier {
   // ignore: constant_identifier_names
-  Adult, Child
+  Adult, Child, Baby
 }
 
 class Age {
@@ -158,9 +159,28 @@ class Invoice{
       });
     }
 
+    // InvoiceItems items = InvoiceItems();
+    // for (var item in object["items"]) {
+    //   switch (item["name"]) {
+    //     case "Child Assessment":
+    //     case "Adult Assessment":
+    //       var split = item["description"].toString().split(': ').last.split(" (");
+    //       String id = split.last.split(')').first;
+    //       FamilyMember? member;
+    //       await database().ref("members").child(id).once('value').then((value) async {
+    //         member = FamilyMember.toMember(value.snapshot.val());
+    //         member?.id = id;
+    //       });
+    //       items.addMember(member);
+    //       break;
+    //     default:
+    //   }
+    // }
+
     double amt = double.parse(object["amount"]["value"]); 
 
     Invoice ret = Invoice(id, invNum, status, startedDate, viewed, hoh, amt, url);
+    // ret.items = items;
     return ret; 
 
   }
@@ -213,12 +233,13 @@ class InvoiceItems{
 
       Map<String, Object> temp = {}; 
 
-      temp["name"] = theMember!.name + " assessment";
-      temp["description"] = theMember.tier.toString().split('.').last + " assessment for " + theMember.name;
+      temp["name"] = theMember!.tier.toString().split('.').last + " Assessment";
+      String item = theMember.tier == FamilyMemberTier.Baby ? "Tshirt Purchase" : "Assessment";
+      temp["description"] = "KC Teague 2022 $item for: ${theMember.name} (${theMember.id})";
       temp["quantity"] = "1";
       temp["unit_amount"] = {
         "currency_code": "USD",
-        "value": (theMember.tier == FamilyMemberTier.Adult ? 100.00 : 90.00).toStringAsFixed(2)
+        "value": (theMember.tier == FamilyMemberTier.Adult ? 100.00 : 25.00).toStringAsFixed(2)
       };
 
       ret.add(temp);
@@ -264,9 +285,22 @@ class InvoiceItems{
 
     double total = 0;
 
-    tickets.forEach((member) { 
-      total += (member!.tier == FamilyMemberTier.Adult ? 100 : 90);
-    });
+    for (var member in tickets) {
+      var toAdd;
+      switch (member!.tier) {
+        case FamilyMemberTier.Adult:
+          toAdd = 100;
+          break;
+        case FamilyMemberTier.Child:
+          toAdd = 25;
+          break;
+        case FamilyMemberTier.Baby:
+          toAdd = 10;
+          break;
+        default:
+      }
+      total += toAdd;
+    }
 
     return total;
 
@@ -345,7 +379,7 @@ class FamilyMember{
 
   FamilyMember(this.name, this.email, this.location, this.dob) {
     age = Age.dateDifference(fromDate: dob, toDate: DateTime.now());
-    tier = age.years > 13 ? FamilyMemberTier.Adult : FamilyMemberTier.Child; 
+    tier = age.years > 11 ? FamilyMemberTier.Adult : FamilyMemberTier.Child; 
   }
 
   FamilyMember addPhone(String givenPhone) { phone = givenPhone; return this; }
@@ -362,6 +396,14 @@ class FamilyMember{
     String date = DateFormat('MM/dd/yyyy').format(dob);
     return "${name.split(' ').last}, ${name.split(' ').first}; $email;${phone.isNotEmpty ? " $phone; " : null}${ location.city}, ${location.state}; $date";
 
+  }
+
+  @override
+  int get hashCode => hash2(id.hashCode, name.hashCode);
+
+  @override
+  bool operator ==(Object other) {
+    return (other is FamilyMember && other.id == id);
   }
 
   static Map<String, dynamic> toMap(FamilyMember member) {
