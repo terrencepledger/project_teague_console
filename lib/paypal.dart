@@ -129,11 +129,11 @@ class Paypal {
       for (var jsonInvoice in invoices) {
         Invoice? invoice = await Invoice.toInvoice(jsonInvoice);
         if(invoice != null && (invoice.status != InvoiceStatus.other && invoice.status != InvoiceStatus.cancelled)) {
-          if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.sent) {
+          if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.sent || invoice.status == InvoiceStatus.complete) {
 
             var detailedInvObj = json.decode((await client.get(invoice.url)).body);
 
-            if(invoice.status == InvoiceStatus.inProgress)
+            if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.complete)
             {
               invoice.paid = double.parse(detailedInvObj["payments"]["paid_amount"]["value"]);
               var transactions = detailedInvObj["payments"]["transactions"];

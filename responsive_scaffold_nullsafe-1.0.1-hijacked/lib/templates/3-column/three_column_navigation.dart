@@ -116,17 +116,15 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                         sectionIndex: _sectionIndex,
                         sectionTap: (index) {
                           widget.updateFunc?.call();
-                          if (_sectionIndex != index) {
-                            setState(() {
+                          setState(() {
                               _listIndex = 0;
+                          });
+                          if (mounted) {
+                            setState(() {
+                              _sectionIndex = index;
                             });
-                            if (mounted) {
-                              setState(() {
-                                _sectionIndex = index;
-                              });
-                            }
-                            _setUpController(false);
                           }
+                          _setUpController(false);
                         },
                       ),
                       bottomNavigationBar: widget.bottomAppBar,
@@ -141,6 +139,7 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                             sections: widget.sections,
                             sectionIndex: _sectionIndex,
                             sectionChanged: (context, index) {
+                              widget.updateFunc?.call();
                               setState(() {
                                 _listIndex = 0;
                               });
@@ -178,13 +177,11 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                       section: widget.sections[_sectionIndex],
                       listIndex: _listIndex,
                       listTap: (index) {
-                        if (_listIndex != index) {
-                          if (mounted) {
+                        if (mounted) {
                             setState(() {
                               _listIndex = index;
                             });
                           }
-                        }
                       },
                     ),
                     bottomNavigationBar:
@@ -263,40 +260,38 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
             section: widget.sections[_sectionIndex],
             listIndex: _listIndex,
             listTap: (index) {
-              if (_listIndex != index) {
-                if (mounted) {
-                  setState(() {
-                    _listIndex = index;
-                  });
-                }
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) {
-                    final _details = widget.sections[_sectionIndex]
-                        .getDetails(
-                          context, _listIndex, 
-                          (page, list) {
-                            if (mounted) {
-                              setState(() {
-                                _sectionIndex = page;
-                                _listIndex = list;
-                              });
-                            }
-
-                            _setUpController(false);
-                            // Navigator.pop(context);
-                          });
-                    return DetailsView(
-                      isFirst: _listIndex == 0,
-                      isLast: widget.sections.isNotEmpty &&
-                          _listIndex == widget.sections.length - 1,
-                      listIndex: _listIndex,
-                      details: _details,
-                      // showDetailsArrows: false,
-                    );
-                  },
-                ));
+             if (mounted) {
+                setState(() {
+                  _listIndex = index;
+                });
               }
-            },
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) {
+                  final _details = widget.sections[_sectionIndex]
+                      .getDetails(
+                        context, _listIndex, 
+                        (page, list) {
+                          if (mounted) {
+                            setState(() {
+                              _sectionIndex = page;
+                              _listIndex = list;
+                            });
+                          }
+
+                          _setUpController(false);
+                          // Navigator.pop(context);
+                        });
+                  return DetailsView(
+                    isFirst: _listIndex == 0,
+                    isLast: widget.sections.isNotEmpty &&
+                        _listIndex == widget.sections.length - 1,
+                    listIndex: _listIndex,
+                    details: _details,
+                    // showDetailsArrows: false,
+                  );
+                },
+              ));
+            }  
           ),
           bottomNavigationBar: widget.sections[_sectionIndex].bottomAppBar,
         );

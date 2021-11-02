@@ -123,7 +123,6 @@ class Invoice{
     String invNum = details["invoice_number"];
     Uri url = Uri.parse((object["links"] as List).firstWhere((element) => element["method"] == "GET")["href"].toString());
     InvoiceStatus status;
-    
     switch (object["status"]) {
       case "PARTIALLY_PAID":
         status = InvoiceStatus.inProgress;
@@ -131,6 +130,7 @@ class Invoice{
       case "SENT":
         status = InvoiceStatus.sent;
         break;
+      case "MARKED_AS_PAID":
       case "PAID":
         status = InvoiceStatus.complete;
         break;

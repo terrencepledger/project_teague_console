@@ -194,388 +194,391 @@ class _MyHomePageState extends State<MyHomePage> {
             }
             return DetailsWidget(
               title: const Text('Details'),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            color: Colors.lightBlueAccent,
-                            shape: const RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: Colors.blue,
-                                width: 1
-                              )
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                "Head of household: ${invoices.elementAt(index).hoh?.name ?? "ERROR NO HOH"}",
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold
-                                ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              color: Colors.lightBlueAccent,
+                              shape: const RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Colors.blue,
+                                  width: 1
+                                )
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            color: Colors.lightBlueAccent,
-                            shape: const RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: Colors.blue,
-                                width: 1
-                              )
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                "Invoice Start Date: ${
-                                DateFormat("MM/dd/yyyy").format(invoices.elementAt(index).startedDate)
-                                }", 
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Head of household: ${invoices.elementAt(index).hoh?.name ?? "ERROR NO HOH"}",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            color: Colors.lightBlueAccent,
-                            shape: const RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: Colors.blue,
-                                width: 1
-                              )
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                "Viewed? - ${invoices.elementAt(index).viewed.toString()}", 
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            color: Colors.lightBlueAccent,
-                            shape: const RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: Colors.blue,
-                                width: 1
-                              )
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                "Payment Status: \$${invoices.elementAt(index).paid}/\$${invoices.elementAt(index).amt.toString()}",
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            color: Colors.lightBlueAccent,
-                            shape: const RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: Colors.blue,
-                                width: 1
-                              )
-                            ),
-                            child: Column(
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Item List:", 
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold
-                                    ),
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Table(
-                                    defaultColumnWidth: const IntrinsicColumnWidth(flex: 50),
-                                    children: [ 
-                                      const TableRow(
-                                        children: [
-                                          Center(child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Name", style: TextStyle(fontWeight: FontWeight.bold,)),
-                                          )),  
-                                          Center(child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Amount", style: TextStyle(fontWeight: FontWeight.bold,)),
-                                          ))
-                                        ]
-                                      ),
-                                      ...
-                                      List.generate(invoices.elementAt(index).items.createItemList().length, 
-                                        (memberIndex) => TableRow(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text(
-                                                invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["name"].toString() +
-                                                invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("Assessment").last,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(color: Colors.black),
-                                              )),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text(
-                                                "\$" + double.parse((invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["unit_amount"] as Map)["value"].toString()).toStringAsFixed(2),
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(color: Colors.black),
-                                              )),
-                                            ),
-                                          ]
-                                        )
-                                      )
-                                    ]
-                                  )
-                                )
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            color: Colors.lightBlueAccent,
-                            shape: const RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: Colors.blue,
-                                width: 1
-                              )
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              color: Colors.lightBlueAccent,
+                              shape: const RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Colors.blue,
+                                  width: 1
+                                )
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Invoice Start Date: ${
+                                  DateFormat("MM/dd/yyyy").format(invoices.elementAt(index).startedDate)
+                                  }", 
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold
+                                  ),
+                                ),
+                              ),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Stack(
-                                  alignment: AlignmentDirectional.center,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      // ignore: prefer_const_literals_to_create_immutables
-                                      children: const [
-                                        Expanded(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text(
-                                              "Payment List:", 
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              color: Colors.lightBlueAccent,
+                              shape: const RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Colors.blue,
+                                  width: 1
+                                )
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Viewed? - ${invoices.elementAt(index).viewed.toString()}", 
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              color: Colors.lightBlueAccent,
+                              shape: const RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Colors.blue,
+                                  width: 1
+                                )
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Payment Status: \$${invoices.elementAt(index).paid}/\$${invoices.elementAt(index).amt.toString()}",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              color: Colors.lightBlueAccent,
+                              shape: const RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Colors.blue,
+                                  width: 1
+                                )
+                              ),
+                              child: Column(
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text(
+                                      "Item List:", 
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Table(
+                                      defaultColumnWidth: const IntrinsicColumnWidth(flex: 50),
+                                      children: [ 
+                                        const TableRow(
+                                          children: [
+                                            Center(child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text("Name", style: TextStyle(fontWeight: FontWeight.bold,)),
+                                            )),  
+                                            Center(child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text("Amount", style: TextStyle(fontWeight: FontWeight.bold,)),
+                                            ))
+                                          ]
+                                        ),
+                                        ...
+                                        List.generate(invoices.elementAt(index).items.createItemList().length, 
+                                          (memberIndex) => TableRow(
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Center(child: Text(
+                                                  invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["name"].toString() +
+                                                  invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("Assessment").last,
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(color: Colors.black),
+                                                )),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Center(child: Text(
+                                                  "\$" + double.parse((invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["unit_amount"] as Map)["value"].toString()).toStringAsFixed(2),
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(color: Colors.black),
+                                                )),
+                                              ),
+                                            ]
+                                          )
+                                        )
+                                      ]
+                                    )
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              color: Colors.lightBlueAccent,
+                              shape: const RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Colors.blue,
+                                  width: 1
+                                )
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Stack(
+                                    alignment: AlignmentDirectional.center,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        // ignore: prefer_const_literals_to_create_immutables
+                                        children: const [
+                                          Expanded(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "Payment List:", 
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(15.0),
-                                        child: Tooltip(
-                                          message: "Manual Entry",
-                                          child: IconButton(
-                                            icon: const Icon(
-                                              Icons.add_circle_outline_rounded
-                                            ),
-                                            onPressed: () async {
-                                              TextEditingController textController = TextEditingController();
-                                              await showDialog(
-                                                context: context, 
-                                                builder: (context) {
-                                                  return Dialog(
-                                                    child: StatefulBuilder(
-                                                      builder: (BuildContext context, setState2) {
-                                                        return Padding(
-                                                          padding: const EdgeInsets.all(8.0),
-                                                          child: Container(
-                                                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 3),
-                                                            child: Column(
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children:  [
-                                                                Padding(
-                                                                  padding: const EdgeInsets.all(8.0),
-                                                                  child: TextFormField(
-                                                                    controller: textController,
-                                                                    inputFormatters: <TextInputFormatter>[
-                                                                      FilteringTextInputFormatter.allow(RegExp(r'^(?=\D*(?:\d\D*){1,12}$)\d+(?:\.\d{0,4})?$')),
-                                                                    ],
-                                                                    // keyboardType: const TextInputType.numberWithOptions(signed: true),
-                                                                    decoration: const InputDecoration(
-                                                                      labelText: "Enter Payment Amount (negative allowed)"
+                                        ],
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(15.0),
+                                          child: Tooltip(
+                                            message: "Manual Entry",
+                                            child: IconButton(
+                                              icon: const Icon(
+                                                Icons.add_circle_outline_rounded
+                                              ),
+                                              onPressed: () async {
+                                                TextEditingController textController = TextEditingController();
+                                                await showDialog(
+                                                  context: context, 
+                                                  builder: (context) {
+                                                    return Dialog(
+                                                      child: StatefulBuilder(
+                                                        builder: (BuildContext context, setState2) {
+                                                          return Padding(
+                                                            padding: const EdgeInsets.all(8.0),
+                                                            child: Container(
+                                                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width / 3),
+                                                              child: Column(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children:  [
+                                                                  Padding(
+                                                                    padding: const EdgeInsets.all(8.0),
+                                                                    child: TextFormField(
+                                                                      controller: textController,
+                                                                      inputFormatters: <TextInputFormatter>[
+                                                                        FilteringTextInputFormatter.allow(RegExp(r'^(?=\D*(?:\d\D*){1,12}$)\d+(?:\.\d{0,4})?$')),
+                                                                      ],
+                                                                      // keyboardType: const TextInputType.numberWithOptions(signed: true),
+                                                                      decoration: const InputDecoration(
+                                                                        labelText: "Enter Payment Amount (negative allowed)"
+                                                                      ),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                                Padding(
-                                                                  padding: const EdgeInsets.all(8.0),
-                                                                  child: ElevatedButton.icon(
-                                                                    onPressed: () async {
-                                                                      double amt = double.parse(textController.text);
-                                                                      Response res = await paypal.update(invoices.elementAt(index).url, amt);
-                                                                      String msg;
-                                                                      if(res.statusCode != 200) {
-                                                                        msg = "Unable to enter payment: ${res.statusCode} - ${res.reasonPhrase}";
-                                                                      }
-                                                                      else {
-                                                                        msg = "Successfully Entered";
-                                                                      }
-                                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                                        SnackBar(
-                                                                          content: Text(msg)
-                                                                        )
-                                                                      );
-                                                                    }, 
-                                                                    icon: const Icon(Icons.check),
-                                                                    label: const Text("Submit")
-                                                                  ),
-                                                                )
-                                                              ],
+                                                                  Padding(
+                                                                    padding: const EdgeInsets.all(8.0),
+                                                                    child: ElevatedButton.icon(
+                                                                      onPressed: () async {
+                                                                        double amt = double.parse(textController.text);
+                                                                        Response res = await paypal.update(invoices.elementAt(index).url, amt);
+                                                                        String msg;
+                                                                        if(res.statusCode != 200) {
+                                                                          msg = "Unable to enter payment: ${res.statusCode} - ${res.reasonPhrase}";
+                                                                        }
+                                                                        else {
+                                                                          msg = "Successfully Entered";
+                                                                        }
+                                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                                          SnackBar(
+                                                                            content: Text(msg)
+                                                                          )
+                                                                        );
+                                                                        Navigator.of(context).pop();
+                                                                      }, 
+                                                                      icon: const Icon(Icons.check),
+                                                                      label: const Text("Submit")
+                                                                    ),
+                                                                  )
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  );
-                                                }
-                                              );
-                                            } 
+                                                          );
+                                                        },
+                                                      ),
+                                                    );
+                                                  }
+                                                );
+                                              } 
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    )
-                                  ]
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(20.0),
-                                  child: Table(
-                                    defaultColumnWidth: const IntrinsicColumnWidth(flex: 50),
-                                    children: [ 
-                                      const TableRow(
-                                        children: [
-                                          Center(child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Payment ID", style: TextStyle(fontWeight: FontWeight.bold,)),
-                                          )), 
-                                          Center(child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Date", style: TextStyle(fontWeight: FontWeight.bold,)),
-                                          )), 
-                                          Center(child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Amount", style: TextStyle(fontWeight: FontWeight.bold,)),
-                                          ))
-                                        ]
-                                      ),
-                                      ...
-                                      List.generate(invoices.elementAt(index).payments.length, 
-                                        (index2) => TableRow(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text(invoices.elementAt(index).payments.elementAt(index2).id)),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text(DateFormat("MM-dd-yyyy").format(
-                                                invoices.elementAt(index).payments.elementAt(index2).date
-                                              ))),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Center(child: Text("\$${invoices.elementAt(index).payments.elementAt(index2).amt.toStringAsFixed(2)}")),
-                                            )
-                                          ]
-                                        )
                                       )
                                     ]
                                   ),
-                                )
-                              ],
+                                  Padding(
+                                    padding: const EdgeInsets.all(20.0),
+                                    child: Table(
+                                      defaultColumnWidth: const IntrinsicColumnWidth(flex: 50),
+                                      children: [ 
+                                        const TableRow(
+                                          children: [
+                                            Center(child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text("Payment ID", style: TextStyle(fontWeight: FontWeight.bold,)),
+                                            )), 
+                                            Center(child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text("Date", style: TextStyle(fontWeight: FontWeight.bold,)),
+                                            )), 
+                                            Center(child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text("Amount", style: TextStyle(fontWeight: FontWeight.bold,)),
+                                            ))
+                                          ]
+                                        ),
+                                        ...
+                                        List.generate(invoices.elementAt(index).payments.length, 
+                                          (index2) => TableRow(
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Center(child: Text(invoices.elementAt(index).payments.elementAt(index2).id)),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Center(child: Text(DateFormat("MM-dd-yyyy").format(
+                                                  invoices.elementAt(index).payments.elementAt(index2).date
+                                                ))),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Center(child: Text("\$${invoices.elementAt(index).payments.elementAt(index2).amt.toStringAsFixed(2)}")),
+                                              )
+                                            ]
+                                          )
+                                        )
+                                      ]
+                                    ),
+                                  )
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          paypal.sendReminder(context, invoices.elementAt(index), 
-                            (String code, String reason) {
-                              ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                                SnackBar(
-                                  content: Text("Unable to Send Reminder. Contact Terrence Pledger with code $code - $reason"),
-                                  duration: const Duration(seconds: 8),
-                                )
-                              );
-                            }
-                          );
-                        }, 
-                        icon: const Icon(Icons.check),
-                        label: const Text("Send Reminder")
-                      ),
+                      ],
                     ),
-                  )
-                ],
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            paypal.sendReminder(context, invoices.elementAt(index), 
+                              (String code, String reason) {
+                                ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                                  SnackBar(
+                                    content: Text("Unable to Send Reminder. Contact Terrence Pledger with code $code - $reason"),
+                                    duration: const Duration(seconds: 8),
+                                  )
+                                );
+                              }
+                            );
+                          }, 
+                          icon: const Icon(Icons.check),
+                          label: const Text("Send Reminder")
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
             );
           },
