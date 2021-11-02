@@ -75,22 +75,28 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void loadMembers() {
     db.once('value').then((query) {
+      List<FamilyMember> temp = [];
+      Map<FamilyMember, DateTime> tempDobs = {};
       query.snapshot.forEach((child){
         setState(() {
           FamilyMember member = FamilyMember.toMember(child.val());
           member.id = child.key;
-          members.add(member);
-          dobs[member] = member.dob;
-          members.sort(
-            (a, b) {
-              var aReversedName = a.name.split(' ').last + a.name.split(' ').first;
-              var bReversedName = b.name.split(' ').last + b.name.split(' ').first;
-              int compared = aReversedName.compareTo(bReversedName);
-              return compared;
-            }
-          );
+          temp.add(member);
+          tempDobs[member] = member.dob;
           formKeys.add(GlobalKey<FormState>());
         });
+      });
+      setState(() {
+        members = temp;
+        dobs = tempDobs;
+        members.sort(
+          (a, b) {
+            var aReversedName = a.name.split(' ').last + a.name.split(' ').first;
+            var bReversedName = b.name.split(' ').last + b.name.split(' ').first;
+            int compared = aReversedName.compareTo(bReversedName);
+            return compared;
+          }
+        );
       });
     });
   }
@@ -352,7 +358,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: Center(child: Text(
-                                                invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("2022 ").last,
+                                                invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["name"].toString() +
+                                                invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("Assessment").last,
                                                 textAlign: TextAlign.center,
                                                 style: const TextStyle(color: Colors.black),
                                               )),
@@ -586,7 +593,7 @@ class _MyHomePageState extends State<MyHomePage> {
               selected: selected,
               title: Text(members.elementAt(index).name),
               subtitle: Text(
-                "${members.elementAt(index).name} ${members.elementAt(index).assessmentStatus.created ? 'IS' : 'is NOT' } registered"
+                members.elementAt(index).assessmentStatus.created ? 'Registered' : 'NOT Registered'
               ),
             );
           },
@@ -609,9 +616,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 IconButton(
                   icon: const Icon(Icons.info),
                   onPressed: () {
-                    Invoice inv = invoices.firstWhere((invoice) => invoice.items.tickets.contains(members.elementAt(index)));
-                    int invIndex = invoices.indexOf(inv);
-                    func.call(0, invIndex);
+                    try {
+                      Invoice? inv = invoices.firstWhere((invoice) => invoice.items.tickets.contains(members.elementAt(index)));
+                      int invIndex = invoices.indexOf(inv);
+                      func.call(0, invIndex); 
+                    } on StateError {
+                      null;
+                    }
                   },
                 ),
               ],

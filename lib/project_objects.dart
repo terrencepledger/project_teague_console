@@ -159,23 +159,6 @@ class Invoice{
       });
     }
 
-    // InvoiceItems items = InvoiceItems();
-    // for (var item in object["items"]) {
-    //   switch (item["name"]) {
-    //     case "Child Assessment":
-    //     case "Adult Assessment":
-    //       var split = item["description"].toString().split(': ').last.split(" (");
-    //       String id = split.last.split(')').first;
-    //       FamilyMember? member;
-    //       await database().ref("members").child(id).once('value').then((value) async {
-    //         member = FamilyMember.toMember(value.snapshot.val());
-    //         member?.id = id;
-    //       });
-    //       items.addMember(member);
-    //       break;
-    //     default:
-    //   }
-    // }
 
     double amt = double.parse(object["amount"]["value"]); 
 
@@ -235,7 +218,7 @@ class InvoiceItems{
 
       temp["name"] = theMember!.tier.toString().split('.').last + " Assessment";
       String item = theMember.tier == FamilyMemberTier.Baby ? "Tshirt Purchase" : "Assessment";
-      temp["description"] = "KC Teague 2022 $item for: ${theMember.name} (${theMember.id})";
+      temp["description"] = "KC Teague 2022 $item for: ${theMember.name}";
       temp["quantity"] = "1";
       temp["unit_amount"] = {
         "currency_code": "USD",

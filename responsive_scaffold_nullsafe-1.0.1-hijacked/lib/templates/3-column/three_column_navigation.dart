@@ -117,7 +117,9 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                         sectionTap: (index) {
                           widget.updateFunc?.call();
                           if (_sectionIndex != index) {
-                            _listIndex = 0;
+                            setState(() {
+                              _listIndex = 0;
+                            });
                             if (mounted) {
                               setState(() {
                                 _sectionIndex = index;
@@ -139,6 +141,9 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                             sections: widget.sections,
                             sectionIndex: _sectionIndex,
                             sectionChanged: (context, index) {
+                              setState(() {
+                                _listIndex = 0;
+                              });
                               if (_sectionIndex != index) {
                                 if (mounted) {
                                   setState(() {
@@ -199,15 +204,14 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                         details: widget.sections[_sectionIndex]
                             .getDetails(context, _listIndex,
                             (page, list) {
-                            if (mounted) {
-                              setState(() {
-                                _sectionIndex = page;
-                                _listIndex = list;
-                              });
-                            }
-
-                            _setUpController(false);
-                            // Navigator.pop(context);
+                              if (mounted) {
+                                setState(() {
+                                  _sectionIndex = page;
+                                  _listIndex = list;
+                                });
+                              }
+                              _setUpController(false);
+                              // Navigator.pop(context);
                           }
                           ),
                         showDetailsArrows: widget.showDetailsArrows,
