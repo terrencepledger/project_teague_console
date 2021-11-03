@@ -482,6 +482,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                           )
                                                                         );
                                                                         Navigator.of(context).pop();
+                                                                        loadMembers();
+                                                                        loadInvoices();
                                                                       }, 
                                                                       icon: const Icon(Icons.check),
                                                                       label: const Text("Submit")
