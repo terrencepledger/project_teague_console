@@ -114,7 +114,7 @@ class Paypal {
 
   }
 
-  void getInvoices(Function(List<Invoice> temp) func, Function(String errorCode, String error) onError) async {
+  void getInvoices(Function(List<Invoice> temp, int count) func, Function(String errorCode, String error) onError) async {
     
     List<Invoice> ret = [];
 
@@ -126,6 +126,7 @@ class Paypal {
     
     if (response.statusCode == 200) {
       List invoices = json.decode(response.body)["items"];
+      int count = 0;
       for (var jsonInvoice in invoices) {
         Invoice? invoice = await Invoice.toInvoice(jsonInvoice);
         if(invoice != null && (invoice.status != InvoiceStatus.other && invoice.status != InvoiceStatus.cancelled)) {
@@ -139,6 +140,9 @@ class Paypal {
               var transactions = detailedInvObj["payments"]["transactions"];
               for (var payment in transactions) {
                 invoice.payments.add(Payment.fromMap(payment));
+              }
+              if(invoice.status == InvoiceStatus.complete) {
+                count++;
               }
             }
             else {
@@ -166,7 +170,7 @@ class Paypal {
           ret.add(invoice);
         }
       }
-      func.call(ret);
+      func.call(ret,count);
     }
     else {
       onError.call(response.statusCode.toString(), response.reasonPhrase.toString());

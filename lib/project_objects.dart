@@ -27,7 +27,6 @@ enum InvoiceStatus {
 }
 
 enum FamilyMemberTier {
-  // ignore: constant_identifier_names
   Adult, Child, Baby
 }
 

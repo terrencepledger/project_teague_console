@@ -62,6 +62,9 @@ class _MyHomePageState extends State<MyHomePage> {
   List<FamilyMember> members = [];
   List<Invoice> invoices = [];
 
+  int assessmentCount = 0;
+  int registered = 0;
+
   List<GlobalKey<FormState>> formKeys = [];
   Map<FamilyMember, DateTime> dobs = {};
   
@@ -77,10 +80,14 @@ class _MyHomePageState extends State<MyHomePage> {
     db.once('value').then((query) {
       List<FamilyMember> temp = [];
       Map<FamilyMember, DateTime> tempDobs = {};
+      registered = 0;
       query.snapshot.forEach((child){
         setState(() {
           FamilyMember member = FamilyMember.toMember(child.val());
           member.id = child.key;
+          if(member.assessmentStatus.created) {
+            registered++;
+          }
           temp.add(member);
           tempDobs[member] = member.dob;
           formKeys.add(GlobalKey<FormState>());
@@ -103,9 +110,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void loadInvoices() {
     paypal.getInvoices(
-      (List<Invoice> temp) {
+      (List<Invoice> temp, int givenCount) {
         setState(() {
           invoices = temp;
+          assessmentCount = givenCount;
         });
       },
       (String code, String reason) {
@@ -149,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.grey[100],
       sections: [
         MainSection(
-          label: const Text('Assessments'),
+          label: Text('Assessments $assessmentCount/${invoices.length}'),
           icon: const Icon(Icons.attach_money),
           itemCount: invoices.length,
           itemBuilder: (context, index, selected) {
@@ -586,7 +594,7 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
         MainSection(
-          label: const Text('Users'),
+          label: Text('Users $registered/${members.length}'),
           icon: const Icon(Icons.people),
           itemCount: members.length,
           itemBuilder: (context, index, selected) {
