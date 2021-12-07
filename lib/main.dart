@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:firebase/firebase.dart';
 import 'package:flutter/cupertino.dart';
@@ -463,7 +465,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                     child: TextFormField(
                                                                       controller: textController,
                                                                       inputFormatters: <TextInputFormatter>[
-                                                                        FilteringTextInputFormatter.allow(RegExp(r'^(?=\D*(?:\d\D*){1,12}$)\d+(?:\.\d{0,4})?$')),
+                                                                        FilteringTextInputFormatter.allow(RegExp(r'^-{1}|(?=\D*(?:\d\D*){1,12}$)\d+(?:\.\d{0,4})?$')),
                                                                       ],
                                                                       // keyboardType: const TextInputType.numberWithOptions(signed: true),
                                                                       decoration: const InputDecoration(
@@ -479,14 +481,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                         Response res = await paypal.update(invoices.elementAt(index).url, amt);
                                                                         String msg;
                                                                         if(res.statusCode != 200) {
-                                                                          msg = "Unable to enter payment: ${res.statusCode} - ${res.reasonPhrase}";
+                                                                          msg = "Unable to enter payment: ${res.statusCode} - ${res.reasonPhrase}: ${json.decode(res.body)['details'][0]['description']}";
                                                                         }
                                                                         else {
                                                                           msg = "Successfully Entered";
                                                                         }
                                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                                           SnackBar(
-                                                                            content: Text(msg)
+                                                                            content: Text(msg),
+                                                                            duration: const Duration(seconds: 10),
                                                                           )
                                                                         );
                                                                         Navigator.of(context).pop();
@@ -732,35 +735,66 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       Column(
                         children: [
-                          Text("Tshirt Size", style: Theme.of(context).textTheme.headline5,),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
+                            children: [                              
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: DropdownButton(
-                                  hint: const Text("Select Size"),
-                                  value: members.elementAt(index).tSize,
-                                  dropdownColor: Colors.white,
-                                  style: const TextStyle(color: Colors.black),
-                                  items: List.generate(TshirtSize.values.length, (index) {
-                                    return DropdownMenuItem<TshirtSize>(
-                                      value: TshirtSize.values.elementAt(index), 
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          TshirtSize.values.elementAt(index).toString().split('.')[1].split("_").join(" "),
-                                          style: const TextStyle(
-                                            color: Colors.black
-                                          ),
+                                child: Column(
+                                  children: [
+                                    Text("Tshirt Size", style: Theme.of(context).textTheme.headline5,),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: DropdownButton(
+                                        hint: const Text("Select Size"),
+                                        value: members.elementAt(index).tSize,
+                                        dropdownColor: Colors.white,
+                                        style: const TextStyle(color: Colors.black),
+                                        items: List.generate(TshirtSize.values.length, (index) {
+                                          return DropdownMenuItem<TshirtSize>(
+                                            value: TshirtSize.values.elementAt(index), 
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                TshirtSize.values.elementAt(index).toString().split('.')[1].split("_").join(" "),
+                                                style: const TextStyle(
+                                                  color: Colors.black
+                                                ),
+                                              ),
+                                            )
+                                          );
+                                        }),
+                                        onChanged: (newSize) {
+                                          setState(() {
+                                            members.elementAt(index).tSize = newSize as TshirtSize;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(border: Border.all(color: Colors.blue)),
+                                padding: const EdgeInsets.all(20),
+                                child: StatefulBuilder(
+                                  builder: (BuildContext context, StateSetter setState) {
+                                    // bool _isMember = members.elementAt(index).isDirectoryMember; 
+                                    return Row(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 50),
+                                          child: Checkbox(value: members.elementAt(index).isDirectoryMember, onChanged: (changed) {
+                                            setState(
+                                              () {
+                                                members.elementAt(index).isDirectoryMember = changed!;
+                                              }
+                                            );
+                                          }),
                                         ),
-                                      )
+                                        Text("Add to Directory?", style: Theme.of(context).textTheme.headline5,),
+                                      ],
                                     );
-                                  }),
-                                  onChanged: (newSize) {
-                                    setState(() {
-                                      members.elementAt(index).tSize = newSize as TshirtSize;
-                                    });
                                   },
                                 ),
                               ),

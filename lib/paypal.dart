@@ -180,7 +180,17 @@ class Paypal {
 
   Future<Response> update(Uri url, double amt) async {
 
-    return client.post(Uri.parse("${url.toString()}/payments"),
+    String endPoint;
+    
+    if(amt >= 0) {
+      endPoint = "payments";
+    }
+    else {
+      endPoint = "refunds";
+      amt = amt*-1;
+    }
+
+    return client.post(Uri.parse("${url.toString()}/$endPoint"),
       headers: {"Content-Type": "application/json",},
       body: json.encode({
         "method": "OTHER",

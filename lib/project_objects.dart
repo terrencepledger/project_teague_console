@@ -49,11 +49,18 @@ class Age {
 
 }
 
+enum AssessmentPosition {
+
+  Hoh, Participant
+
+}
+
 class AssessmentStatus {
 
   bool created = false;
   late String invoiceId;
   late Invoice invoice;
+  late AssessmentPosition position;
 
   static Map<String, dynamic> toMap(AssessmentStatus assessmentStatus) {
 
@@ -63,6 +70,7 @@ class AssessmentStatus {
 
     if(assessmentStatus.created) {
       object['invoiceId'] = assessmentStatus.invoiceId;
+      object['position'] = assessmentStatus.position.toString().split('.')[1];
     }
 
     return object;
@@ -79,6 +87,11 @@ class AssessmentStatus {
     if(created) {
       String invoiceId = object["invoiceId"];
       ret.invoiceId = invoiceId;
+      ret.position = AssessmentPosition.values.firstWhere(
+        (pos) {
+          return pos.toString().toLowerCase() == "AssessmentPosition.".toLowerCase() + object['position'].toString().toLowerCase();
+        }
+      );
     }
 
     return ret; 
@@ -94,7 +107,13 @@ class Location {
 
   Location(this.state, this.city);
 
-  String displayInfo() => state + ", " + city;
+  String displayInfo() { 
+    String ret = state;
+    if(city.isNotEmpty) {
+      ret += ", $city";
+    }
+    return ret;
+  }
 
 }
 
@@ -357,6 +376,8 @@ class FamilyMember{
   AssessmentStatus assessmentStatus = AssessmentStatus();
   TshirtSize? tSize;
 
+  bool isDirectoryMember = true;
+
   bool registered = false;
 
   FamilyMember(this.name, this.email, this.location, this.dob) {
@@ -401,6 +422,7 @@ class FamilyMember{
     object['phone'] = member.phone;
     object['dob'] = member.dob.millisecondsSinceEpoch;
     object['assessmentStatus'] = AssessmentStatus.toMap(member.assessmentStatus);
+    object['isDirectoryMember'] = member.isDirectoryMember;
 
     if(member.tSize != null) {
       object["tSize"] = member.tSize.toString().split('.')[1].split('_').join(" ");
@@ -414,10 +436,9 @@ class FamilyMember{
 
     String name = object['name'];
     String email = object['email'];
-    Location location = Location(
-      object['location']['state'],
-      object['location']['city']
-    );
+
+    Location location = Location( object['location']['state'], object['location']['city'] );
+
     String phone = object['phone'];
     DateTime dob = DateTime.fromMillisecondsSinceEpoch(object['dob']);
 
@@ -436,6 +457,9 @@ class FamilyMember{
         }
       );
       ret.tSize = size;
+    }
+    if(object['isDirectoryMember'] == false) {
+      ret.isDirectoryMember = false;
     }
     ret.assessmentStatus = assessmentStatus;
     ret.addPhone(phone);
