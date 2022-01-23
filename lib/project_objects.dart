@@ -30,6 +30,16 @@ enum FamilyMemberTier {
   Adult, Child, Baby
 }
 
+enum MemberSort {
+  Alphabetical_Order, Reverse_Alphabetical_Order,
+  Registered, Not_Registered
+}
+
+class InvoiceLoadException implements Exception {
+  String invNum;
+  InvoiceLoadException(this.invNum);
+}
+
 class Age {
 
   late double years;
@@ -100,23 +110,6 @@ class AssessmentStatus {
 
 }
 
-class Location {
-
-  String state;
-  String city;
-
-  Location(this.state, this.city);
-
-  String displayInfo() { 
-    String ret = state;
-    if(city.isNotEmpty) {
-      ret += ", $city";
-    }
-    return ret;
-  }
-
-}
-
 class Invoice{
 
   String id;
@@ -171,8 +164,12 @@ class Invoice{
           hoh = null;
         }
         else {
-          hoh = FamilyMember.toMember(query.snapshot.val());
-          hoh!.id = query.snapshot.key;
+          try {
+            hoh = FamilyMember.toMember(query.snapshot.val());
+            hoh!.id = query.snapshot.key;
+          } on RangeError {
+            throw InvoiceLoadException(invNum);
+          }
         }
       });
     }
@@ -183,26 +180,6 @@ class Invoice{
     Invoice ret = Invoice(id, invNum, status, startedDate, viewed, hoh, amt, url);
     // ret.items = items;
     return ret; 
-
-  }
-
-}
-
-class Payment {
-
-  String id;
-  DateTime date;
-  double amt;
-
-  Payment(this.id, this.date, this.amt);
-
-  static Payment fromMap(Map<String, dynamic> object) {
-
-    String id = object["payment_id"];
-    double amt = double.parse(object["amount"]["value"]);
-    DateTime date = DateFormat("yyyy-MM-dd").parse(object["payment_date"]);
-
-    return Payment(id, date, amt);
 
   }
 
@@ -234,14 +211,31 @@ class InvoiceItems{
 
       Map<String, Object> temp = {}; 
 
-      temp["name"] = theMember!.tier.toString().split('.').last + " Assessment";
-      String item = theMember.tier == FamilyMemberTier.Baby ? "Tshirt Purchase" : "Assessment";
-      temp["description"] = "KC Teague 2022 $item for: ${theMember.name}";
+      temp["name"] = theMember!.tier == FamilyMemberTier.Baby ? "T-Shirt Purchase" : theMember.tier.toString().split('.').last + " Assessment";
+      temp["description"] = "KC Teague 2022 ${temp["name"]} for: ${theMember.name}";
       temp["quantity"] = "1";
-      temp["unit_amount"] = {
-        "currency_code": "USD",
-        "value": (theMember.tier == FamilyMemberTier.Adult ? 100.00 : 25.00).toStringAsFixed(2)
-      };
+      
+      switch (theMember.tier) {
+        case FamilyMemberTier.Baby:
+          temp["unit_amount"] = {
+            "currency_code": "USD",
+            "value": 10.00
+          };
+          break;
+        case FamilyMemberTier.Child:
+          temp["unit_amount"] = {
+            "currency_code": "USD",
+            "value": 30.00
+          };
+          break;
+        case FamilyMemberTier.Adult:
+          temp["unit_amount"] = {
+            "currency_code": "USD",
+            "value": 100.00
+          };
+          break;
+        default:
+      }
 
       ret.add(temp);
 
@@ -287,13 +281,13 @@ class InvoiceItems{
     double total = 0;
 
     for (var member in tickets) {
-      var toAdd;
+      double toAdd = 0;
       switch (member!.tier) {
         case FamilyMemberTier.Adult:
           toAdd = 100;
           break;
         case FamilyMemberTier.Child:
-          toAdd = 25;
+          toAdd = 30;
           break;
         case FamilyMemberTier.Baby:
           toAdd = 10;
@@ -374,15 +368,22 @@ class FamilyMember{
   late Age age;
   late FamilyMemberTier tier;
   AssessmentStatus assessmentStatus = AssessmentStatus();
+  Verification? verification;
   TshirtSize? tSize;
 
   bool isDirectoryMember = true;
 
-  bool registered = false;
-
   FamilyMember(this.name, this.email, this.location, this.dob) {
     age = Age.dateDifference(fromDate: dob, toDate: DateTime.now());
-    tier = age.years > 11 ? FamilyMemberTier.Adult : FamilyMemberTier.Child; 
+    if(age.years > 11) {
+      tier = FamilyMemberTier.Adult;
+    }
+    else if(age.years > 4) {
+      tier = FamilyMemberTier.Child;
+    }
+    else {
+      tier = FamilyMemberTier.Baby;
+    }
   }
 
   FamilyMember addPhone(String givenPhone) { phone = givenPhone; return this; }
@@ -424,6 +425,13 @@ class FamilyMember{
     object['assessmentStatus'] = AssessmentStatus.toMap(member.assessmentStatus);
     object['isDirectoryMember'] = member.isDirectoryMember;
 
+    if(member.verification != null) {
+      object['verification'] = { 
+        "verifiedId": member.verification!.verifiedId, 
+        "email": member.verification!.email
+      };
+    }
+
     if(member.tSize != null) {
       object["tSize"] = member.tSize.toString().split('.')[1].split('_').join(" ");
     }
@@ -437,7 +445,7 @@ class FamilyMember{
     String name = object['name'];
     String email = object['email'];
 
-    Location location = Location( object['location']['state'], object['location']['city'] );
+    Location location = Location( object['location']['state'], object['location']['city'] ?? "");
 
     String phone = object['phone'];
     DateTime dob = DateTime.fromMillisecondsSinceEpoch(object['dob']);
@@ -458,6 +466,9 @@ class FamilyMember{
       );
       ret.tSize = size;
     }
+    if(object.containsKey("verification")) {
+      ret.verification = Verification(object['verification']['verifiedId'], object['verification']['email']);
+    }
     if(object['isDirectoryMember'] == false) {
       ret.isDirectoryMember = false;
     }
@@ -467,5 +478,51 @@ class FamilyMember{
     return ret; 
 
   }
+
+}
+
+class Location {
+
+  String state;
+  String city;
+
+  Location(this.state, this.city);
+
+  String displayInfo() { 
+    String ret = state;
+    if(city.isNotEmpty) {
+      ret += ", $city";
+    }
+    return ret;
+  }
+
+}
+
+class Payment {
+
+  String id;
+  DateTime date;
+  double amt;
+
+  Payment(this.id, this.date, this.amt);
+
+  static Payment fromMap(Map<String, dynamic> object) {
+
+    String id = object["payment_id"];
+    double amt = double.parse(object["amount"]["value"]);
+    DateTime date = DateFormat("yyyy-MM-dd").parse(object["payment_date"]);
+
+    return Payment(id, date, amt);
+
+  }
+
+}
+
+class Verification {
+
+  String verifiedId;
+  String email;
+
+  Verification(this.verifiedId, this.email);
 
 }

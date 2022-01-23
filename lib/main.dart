@@ -1,18 +1,15 @@
 import 'dart:convert';
-
 import 'package:firebase/firebase.dart' as firebase;
 import 'package:firebase/firebase.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import 'package:mailto/mailto.dart';
 import 'package:project_teague_console/paypal.dart';
 import 'package:project_teague_console/project_objects.dart';
 import 'package:responsive_scaffold_nullsafe/responsive_scaffold.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   if (firebase.apps.isEmpty) {
@@ -61,6 +58,8 @@ class _MyHomePageState extends State<MyHomePage> {
   DatabaseReference db = database().ref("members");
   late Paypal paypal;
 
+  MemberSort sorting = MemberSort.Alphabetical_Order;
+
   List<FamilyMember> members = [];
   List<Invoice> invoices = [];
 
@@ -72,8 +71,10 @@ class _MyHomePageState extends State<MyHomePage> {
   
   var sKey = GlobalKey<ScaffoldState>();
 
-  _MyHomePageState() {
-    paypal = Paypal();
+  @override
+  void initState() {
+    super.initState();
+    paypal = Paypal(context);
     loadMembers();
     loadInvoices();
   }
@@ -98,16 +99,48 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         members = temp;
         dobs = tempDobs;
-        members.sort(
-          (a, b) {
-            var aReversedName = a.name.split(' ').last + a.name.split(' ').first;
-            var bReversedName = b.name.split(' ').last + b.name.split(' ').first;
-            int compared = aReversedName.compareTo(bReversedName);
-            return compared;
-          }
-        );
+        sortMembers();
       });
     });
+  }
+   
+  void sortMembers() {
+
+    setState(() {
+      members.sort(
+        (a, b) {
+          
+          var aReversedName = a.name.split(' ').last + a.name.split(' ').first;
+          var bReversedName = b.name.split(' ').last + b.name.split(' ').first;
+          int compared = aReversedName.compareTo(bReversedName);
+
+          switch (sorting) {
+            case MemberSort.Registered:
+              if(b.assessmentStatus.created & a.assessmentStatus.created) {
+                return compared;
+              }
+              else if (b.assessmentStatus.created) {
+                return 1;
+              }
+              return compared;
+            case MemberSort.Not_Registered:
+              if(!b.assessmentStatus.created & !a.assessmentStatus.created || a.assessmentStatus.created & b.assessmentStatus.created) {
+                return compared;
+              }
+              else if (!b.assessmentStatus.created) {
+                return 1;
+              }
+              return -1;
+            case MemberSort.Reverse_Alphabetical_Order:
+              return compared * -1;
+            default:
+              return compared;
+          }
+          
+        }
+      );
+    });
+
   }
 
   void loadInvoices() {
@@ -145,6 +178,55 @@ class _MyHomePageState extends State<MyHomePage> {
         members.elementAt(index).dob = picked;
       });
     }
+  }
+
+  void emailUnregistered() async {
+
+    Map<String, List<String>> emails = {};
+
+    for (FamilyMember member in members) {
+      
+      if(member.assessmentStatus.created) {
+        continue;
+      }
+
+
+      if(!emails.keys.contains(member.email)) {
+        if(!member.isDirectoryMember) {
+          continue;
+        }
+        emails[member.email] = [member.name];
+      }
+      else {
+        emails[member.email]!.add(member.name);
+      }
+
+    }
+
+    final mailToLink = Mailto(
+      bcc: emails.keys.toList(),
+      subject: "Incomplete Teague Reunion Registration",
+      body: """<p>Hello, if you are receiving this email that means you have not finished registration for the 2022 Teague Family Reunion. You may have created an account, but did not create your assessment invoice. Don&apos;t worry, creating the invoice does not mean you have to pay yet! You are welcome to make payments up until the reunion, but we encourage you to finish your registration ASAP.</p>
+        <p>To finish registering, navigate to <a href="http://kcteague.com">kcteague.com</a>. You will be asked to log in with your Gmail account. You may also be asked to select your name from a list of family members. After doing this, click the Registration tab from the menu at the top. From here on, just follow the instructions at the top of the page!</p>
+        <p>If you have any questions, please reach out to <strong>Terrence Pledger at <a href="mailto:8.tpledger@kscholars.org">8.tpledger@kscholars.org</a>&nbsp;</strong>or <strong>Marcie Pledger at (913) 710-0766</strong>.&nbsp;</p>
+        <p>Thanks!</p>"""
+    );
+     
+    String snackBarMsg;
+    try {
+      await launch('$mailToLink');
+      snackBarMsg = "Launched Email";
+    }
+    catch(e) {
+      snackBarMsg = "Launch Error: ${e.toString()}";
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(snackBarMsg),
+      )
+    );
+
   }
 
   @override
@@ -369,8 +451,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                               Padding(
                                                 padding: const EdgeInsets.all(8.0),
                                                 child: Center(child: Text(
-                                                  invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["name"].toString() +
-                                                  invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("Assessment").last,
+                                                  invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("2022 ").last,
                                                   textAlign: TextAlign.center,
                                                   style: const TextStyle(color: Colors.black),
                                                 )),
@@ -617,10 +698,58 @@ class _MyHomePageState extends State<MyHomePage> {
             elevation: 1,
             child: Row(
               children: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: () {},
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: () {
+                      setState(() {
+                        final nextIndex = (sorting.index + 1) % MemberSort.values.length;
+                        sorting = MemberSort.values[nextIndex];
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Sorted by ${sorting.name.toString().split('_').join(" ")}"))
+                        );
+                        sortMembers();
+                      });
+                    },
+                  ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.email),
+                  onPressed: () {
+                    // set up the buttons
+                    Widget cancelButton = TextButton(
+                      child: const Text("Cancel"),
+                      onPressed:  () {
+                        Navigator.of(context).pop();
+                      },
+                    );
+                    Widget continueButton = TextButton(
+                      child: const Text("Continue"),
+                      onPressed:  () {
+                        Navigator.of(context).pop();
+                        emailUnregistered();
+                      },
+                    );
+                    // set up the AlertDialog
+                    AlertDialog alert = AlertDialog(
+                      title: const Text("Unregistered Reminder Email"),
+                      content: const Text("Are you sure you would like to send a reminder to new unregistered users?"),
+                      actions: [
+                        cancelButton,
+                        continueButton,
+                      ],
+                    );
+                    // show the dialog
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return alert;
+                      },
+                    );
+                  },
+                )
               ],
             ),
           ),
@@ -742,7 +871,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
                                   children: [
-                                    Text("Tshirt Size", style: Theme.of(context).textTheme.headline5,),
+                                    Text("T-Shirt Size", style: Theme.of(context).textTheme.headline5,),
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: DropdownButton(
@@ -818,6 +947,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       db.child(member.id).set(
                         FamilyMember.toMap(member)
                       );
+                      setState(() {
+                        loadMembers();
+                      });
                     },
                     child: const Text("Submit Changes")
                   )],

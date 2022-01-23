@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:firebase/firebase.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:http/http.dart';
 import 'package:http_auth/http_auth.dart';
 import 'package:intl/intl.dart';
@@ -15,9 +14,11 @@ class Paypal {
   String clientId = 'AQnM22JZoTqwT0WHk7CA-eaTFRNLyCHf0Rwzh_k66CgELkIfkL9d9M-IDAbBCO3uzSwUVtS7fxFI0wpJ';
   String secret = 'EFd4DQGN88XavS9pNSny8kzs2P1WDkVq9O9TZIK09pBII_heNalAmQ2mAaPjH9FI0fNJOhoWnXHPiF97';
 
+  BuildContext context;
+
   late BasicAuthClient client;
 
-  Paypal() {
+  Paypal(this.context) {
     client = BasicAuthClient(clientId, secret);
   }
 
@@ -128,6 +129,7 @@ class Paypal {
       List invoices = json.decode(response.body)["items"];
       int count = 0;
       for (var jsonInvoice in invoices) {
+
         Invoice? invoice = await Invoice.toInvoice(jsonInvoice);
         if(invoice != null && (invoice.status != InvoiceStatus.other && invoice.status != InvoiceStatus.cancelled)) {
           if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.sent || invoice.status == InvoiceStatus.complete) {
@@ -151,6 +153,7 @@ class Paypal {
 
             for (var item in detailedInvObj["items"]) {
               switch (item["name"]) {
+                case "T-Shirt Purchase":
                 case "Child Assessment":
                 case "Adult Assessment":
                   var split = item["description"].toString().split(': ').last.split(" (");
@@ -162,13 +165,13 @@ class Paypal {
                   });
                   invoice.items.addMember(member);
                   break;
-                default:
               }
             }
 
           }
           ret.add(invoice);
         }
+
       }
       func.call(ret,count);
     }
