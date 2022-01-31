@@ -71,7 +71,7 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
         value,
         preferPosition: position,
       );
-      // controller.highlight(value);
+      controller?.highlight(value);
     } on Exception catch (e) {
       developer.log(
         'Could not scroll to index: $value',
@@ -200,14 +200,15 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                         listIndex: _listIndex,
                         details: widget.sections[_sectionIndex]
                             .getDetails(context, _listIndex,
-                            (page, list) {
+                            (page, list) async {
                               if (mounted) {
                                 setState(() {
                                   _sectionIndex = page;
                                   _listIndex = list;
                                 });
-                              }
-                              _setUpController(false);
+                              }       
+                              _setUpController(false);                              
+                              await _scrollToIndex(_listIndex);
                               // Navigator.pop(context);
                           }
                           ),
@@ -276,9 +277,9 @@ class _ThreeColumnNavigationState extends State<ThreeColumnNavigation> {
                               _sectionIndex = page;
                               _listIndex = list;
                             });
-                          }
-
+                          }          
                           _setUpController(false);
+                          _scrollToIndex(_listIndex);
                           // Navigator.pop(context);
                         });
                   return DetailsView(

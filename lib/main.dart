@@ -448,13 +448,23 @@ class _MyHomePageState extends State<MyHomePage> {
                                         List.generate(invoices.elementAt(index).items.createItemList().length, 
                                           (memberIndex) => TableRow(
                                             children: [
-                                              Padding(
-                                                padding: const EdgeInsets.all(8.0),
-                                                child: Center(child: Text(
-                                                  invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("2022 ").last,
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(color: Colors.black),
-                                                )),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  primary: Colors.blue
+                                                ),
+                                                onPressed: () {
+                                                  FamilyMember foundMember = invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["member"] as FamilyMember; 
+                                                  int foundMemberIndex = members.indexOf(foundMember);
+                                                  func.call(1, foundMemberIndex);
+                                                },
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(8.0),
+                                                  child: Center(child: Text(
+                                                    invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["description"].toString().split("2022 ").last,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(color: Colors.black),
+                                                  )),
+                                                ),
                                               ),
                                               Padding(
                                                 padding: const EdgeInsets.all(8.0),

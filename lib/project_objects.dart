@@ -214,6 +214,7 @@ class InvoiceItems{
       temp["name"] = theMember!.tier == FamilyMemberTier.Baby ? "T-Shirt Purchase" : theMember.tier.toString().split('.').last + " Assessment";
       temp["description"] = "KC Teague 2022 ${temp["name"]} for: ${theMember.name}";
       temp["quantity"] = "1";
+      temp["member"] = theMember;
       
       switch (theMember.tier) {
         case FamilyMemberTier.Baby:
