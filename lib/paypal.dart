@@ -119,7 +119,7 @@ class Paypal {
     
     List<Invoice> ret = [];
 
-    var response = await client.get(Uri.parse('$domain/v2/invoicing/invoices?total_required=true&fields=items'),
+    var response = await client.get(Uri.parse('$domain/v2/invoicing/invoices?page_size=100&total_required=true&fields=items'),
       headers: {
         "Content-Type": "application/json",
       },
@@ -131,19 +131,19 @@ class Paypal {
       for (var jsonInvoice in invoices) {
 
         Invoice? invoice = await Invoice.toInvoice(jsonInvoice);
-        if(invoice != null && (invoice.status != InvoiceStatus.other && invoice.status != InvoiceStatus.cancelled)) {
-          if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.sent || invoice.status == InvoiceStatus.complete) {
+        if((invoice.status != InvoiceStatus.Other && invoice.status != InvoiceStatus.Cancelled)) {
+          if(invoice.status == InvoiceStatus.Paying || invoice.status == InvoiceStatus.Sent || invoice.status == InvoiceStatus.Paid) {
 
             var detailedInvObj = json.decode((await client.get(invoice.url)).body);
 
-            if(invoice.status == InvoiceStatus.inProgress || invoice.status == InvoiceStatus.complete)
+            if(invoice.status == InvoiceStatus.Paying || invoice.status == InvoiceStatus.Paid)
             {
               invoice.paid = double.parse(detailedInvObj["payments"]["paid_amount"]["value"]);
               var transactions = detailedInvObj["payments"]["transactions"];
               for (var payment in transactions) {
                 invoice.payments.add(Payment.fromMap(payment));
               }
-              if(invoice.status == InvoiceStatus.complete) {
+              if(invoice.status == InvoiceStatus.Paid) {
                 count++;
               }
             }

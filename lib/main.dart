@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:mailto/mailto.dart';
 import 'package:project_teague_console/paypal.dart';
 import 'package:project_teague_console/project_objects.dart';
 import 'package:responsive_scaffold_nullsafe/responsive_scaffold.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:collection/collection.dart';
 
 void main() {
   if (firebase.apps.isEmpty) {
@@ -29,7 +31,6 @@ void main() {
 class ConsoleApp extends StatelessWidget {
   const ConsoleApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -37,7 +38,7 @@ class ConsoleApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'HomePage'),
+      home: const LoaderOverlay(child: MyHomePage(title: 'HomePage')),
     );
   }
 }
@@ -74,23 +75,49 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    context.loaderOverlay.show();
     paypal = Paypal(context);
     loadMembers();
     loadInvoices();
+  }
+
+  void checkRegisteredCount() {
+    
+    int temp = 0;
+    for (var member in members) { 
+      if(member.assessmentStatus.created) {
+        Invoice? inv = invoices.firstWhereOrNull((inv) => inv.id == member.assessmentStatus.invoiceId);
+        if(inv!=null) {
+          switch (inv.status) {
+            case InvoiceStatus.Paid:
+            case InvoiceStatus.Paying:
+              temp++;
+              break;
+            default:
+              member.UTA ? null : temp++;
+          }
+        }
+      }
+    }
+
+    setState(() {
+      registered = temp;
+    });
+
+  }
+
+  int checkTotalLikely() {
+    return members.length - members.where((member) => member.UTA).length;
   }
 
   void loadMembers() {
     db.once('value').then((query) {
       List<FamilyMember> temp = [];
       Map<FamilyMember, DateTime> tempDobs = {};
-      registered = 0;
       query.snapshot.forEach((child){
         setState(() {
           FamilyMember member = FamilyMember.toMember(child.val());
           member.id = child.key;
-          if(member.assessmentStatus.created) {
-            registered++;
-          }
           temp.add(member);
           tempDobs[member] = member.dob;
           formKeys.add(GlobalKey<FormState>());
@@ -105,7 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
    
   void sortMembers() {
-
+  //TODO: Add in new sort cases (Paid, Paying, UTA)
     setState(() {
       members.sort(
         (a, b) {
@@ -150,6 +177,8 @@ class _MyHomePageState extends State<MyHomePage> {
           invoices = temp;
           assessmentCount = givenCount;
         });
+        context.loaderOverlay.hide();
+        checkRegisteredCount();
       },
       (String code, String reason) {
         ScaffoldMessenger.of(context)
@@ -229,8 +258,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
+  String getTag(FamilyMember member) {
+
+    if(member.assessmentStatus.created) {
+      Invoice? inv = invoices.firstWhereOrNull((inv) => inv.id == member.assessmentStatus.invoiceId);
+      if(inv!=null) {
+        switch (inv.status) {
+          case InvoiceStatus.Paid:
+            return "Paid";
+          case InvoiceStatus.Paying:
+            return "Paying";
+          default:
+            return member.UTA ? "U.T.A" : "Registered";
+        }
+      }
+    }
+
+    return member.UTA ? "U.T.A" : "Unregistered";
+
+  }
+
   @override
   Widget build(BuildContext context) {
+    //FIXME: Navigation via member button tap from assessment is inconsistent
     return ThreeColumnNavigation(
       updateFunc: () {
         loadMembers();
@@ -263,7 +313,7 @@ class _MyHomePageState extends State<MyHomePage> {
               selected: selected,
               title: Text("${invoices.elementAt(index).hoh?.name ?? "ERROR NO HOH"} - Inv#${invoices.elementAt(index).invNum}"),
               subtitle: Text(
-                invoices.elementAt(index).status == InvoiceStatus.complete ? "COMPLETE" : "IN PROGRESS"
+                invoices.elementAt(index).status == InvoiceStatus.Paid ? "COMPLETE" : "IN PROGRESS"
               ),
             );
           },
@@ -688,7 +738,7 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
         MainSection(
-          label: Text('Users $registered/${members.length}'),
+          label: Text('Users $registered/${checkTotalLikely()}'),
           icon: const Icon(Icons.people),
           itemCount: members.length,
           itemBuilder: (context, index, selected) {
@@ -700,7 +750,7 @@ class _MyHomePageState extends State<MyHomePage> {
               selected: selected,
               title: Text(members.elementAt(index).name),
               subtitle: Text(
-                members.elementAt(index).assessmentStatus.created ? 'Registered' : 'NOT Registered'
+                getTag(members.elementAt(index))
               ),
             );
           },
@@ -861,84 +911,102 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        children: [                              
+                          Padding(
+                            padding: const EdgeInsets.all(25.0),
+                            child: Column(
+                              children: [
+                                Text("T-Shirt Size", style: Theme.of(context).textTheme.headline5,),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: DropdownButton(
+                                    hint: const Text("Select Size"),
+                                    value: members.elementAt(index).tSize,
+                                    dropdownColor: Colors.white,
+                                    style: const TextStyle(color: Colors.black),
+                                    items: List.generate(TshirtSize.values.length, (index) {
+                                      return DropdownMenuItem<TshirtSize>(
+                                        value: TshirtSize.values.elementAt(index), 
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            TshirtSize.values.elementAt(index).toString().split('.')[1].split("_").join(" "),
+                                            style: const TextStyle(
+                                              color: Colors.black
+                                            ),
+                                          ),
+                                        )
+                                      );
+                                    }),
+                                    onChanged: (newSize) {
+                                      setState(() {
+                                        members.elementAt(index).tSize = newSize as TshirtSize;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [                              
+                          Padding(
+                            padding: const EdgeInsets.all(15.0),
+                            child: StatefulBuilder(
+                              builder: (BuildContext context, StateSetter setState) {
+                                return Row(
+                                  children: [
+                                    Checkbox(value: members.elementAt(index).isDirectoryMember, onChanged: (changed) {
+                                      setState(
+                                        () {
+                                          members.elementAt(index).isDirectoryMember = changed!;
+                                        }
+                                      );
+                                    }),
+                                    Text("Add to Directory?", style: Theme.of(context).textTheme.headline5,),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(15.0),
+                            child: StatefulBuilder(
+                              builder: (BuildContext context, StateSetter setState) {
+                                return Row(
+                                  children: [
+                                    Checkbox(value: members.elementAt(index).UTA, onChanged: (changed) {
+                                      setState(
+                                        () {
+                                          members.elementAt(index).UTA = changed!;
+                                        }
+                                      );
+                                    }),
+                                    Text("Unlikely To Attend?", style: Theme.of(context).textTheme.headline5,),
+                                  ],
+                                );
+                              },
+                            ),
+                          )
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(30.0),
                             child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.blueGrey[400]
+                              ),
                               onPressed: () {selectDOB(index);}, 
                               child: Text("DOB: " + DateFormat("MMM dd, yyyy").format(dobs[members.elementAt(index)] as DateTime))
                             ),
                           ),
                           // const Spacer()
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [                              
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  children: [
-                                    Text("T-Shirt Size", style: Theme.of(context).textTheme.headline5,),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: DropdownButton(
-                                        hint: const Text("Select Size"),
-                                        value: members.elementAt(index).tSize,
-                                        dropdownColor: Colors.white,
-                                        style: const TextStyle(color: Colors.black),
-                                        items: List.generate(TshirtSize.values.length, (index) {
-                                          return DropdownMenuItem<TshirtSize>(
-                                            value: TshirtSize.values.elementAt(index), 
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                TshirtSize.values.elementAt(index).toString().split('.')[1].split("_").join(" "),
-                                                style: const TextStyle(
-                                                  color: Colors.black
-                                                ),
-                                              ),
-                                            )
-                                          );
-                                        }),
-                                        onChanged: (newSize) {
-                                          setState(() {
-                                            members.elementAt(index).tSize = newSize as TshirtSize;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(border: Border.all(color: Colors.blue)),
-                                padding: const EdgeInsets.all(20),
-                                child: StatefulBuilder(
-                                  builder: (BuildContext context, StateSetter setState) {
-                                    // bool _isMember = members.elementAt(index).isDirectoryMember; 
-                                    return Row(
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 50),
-                                          child: Checkbox(value: members.elementAt(index).isDirectoryMember, onChanged: (changed) {
-                                            setState(
-                                              () {
-                                                members.elementAt(index).isDirectoryMember = changed!;
-                                              }
-                                            );
-                                          }),
-                                        ),
-                                        Text("Add to Directory?", style: Theme.of(context).textTheme.headline5,),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ],

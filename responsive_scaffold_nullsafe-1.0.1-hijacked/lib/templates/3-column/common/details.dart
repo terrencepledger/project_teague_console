@@ -18,6 +18,7 @@ class DetailsView extends StatelessWidget {
         _details = details,
         super(key: key);
 
+  // ignore: unused_field
   final int _listIndex;
   final DetailsWidget _details;
   final VoidCallback? previous, next;

@@ -14,16 +14,13 @@ enum TshirtColor {
 }
 
 enum Activity {
-  // ignore: constant_identifier_names
   Riverwalk, Alamo, SixFlags, SeaWorld,
-  // ignore: constant_identifier_names
   Caverns, Zoo, Bus, Shopping, Ripleys, 
-  // ignore: constant_identifier_names
   Splashtown, Escape, Aquatica
 }
 
 enum InvoiceStatus {
-  complete, sent, inProgress, cancelled, other
+  Paid, Sent, Paying, Cancelled, Other
 }
 
 enum FamilyMemberTier {
@@ -32,7 +29,7 @@ enum FamilyMemberTier {
 
 enum MemberSort {
   Alphabetical_Order, Reverse_Alphabetical_Order,
-  Registered, Not_Registered
+  Paid, Paying, Registered, Not_Registered, UTA
 }
 
 class InvoiceLoadException implements Exception {
@@ -136,20 +133,20 @@ class Invoice{
     InvoiceStatus status;
     switch (object["status"]) {
       case "PARTIALLY_PAID":
-        status = InvoiceStatus.inProgress;
+        status = InvoiceStatus.Paying;
         break;
       case "SENT":
-        status = InvoiceStatus.sent;
+        status = InvoiceStatus.Sent;
         break;
       case "MARKED_AS_PAID":
       case "PAID":
-        status = InvoiceStatus.complete;
+        status = InvoiceStatus.Paid;
         break;
       case "CANCELLED":
-        status = InvoiceStatus.cancelled;
+        status = InvoiceStatus.Cancelled;
         break;
       default:
-        status = InvoiceStatus.other;
+        status = InvoiceStatus.Other;
     }
 
     DateTime startedDate = DateFormat("yyyy-MM-dd").parse(details["invoice_date"]);
@@ -173,7 +170,6 @@ class Invoice{
         }
       });
     }
-
 
     double amt = double.parse(object["amount"]["value"]); 
 
@@ -207,7 +203,7 @@ class InvoiceItems{
 
     List<Map<String, Object>> ret = [];
 
-    tickets.forEach((theMember) {
+    for (var theMember in tickets) {
 
       Map<String, Object> temp = {}; 
 
@@ -240,7 +236,7 @@ class InvoiceItems{
 
       ret.add(temp);
 
-    });
+    }
 
     // activities.forEach((activity, members) {
       
@@ -371,7 +367,8 @@ class FamilyMember{
   AssessmentStatus assessmentStatus = AssessmentStatus();
   Verification? verification;
   TshirtSize? tSize;
-
+  // ignore: non_constant_identifier_names
+  bool UTA = false;
   bool isDirectoryMember = true;
 
   FamilyMember(this.name, this.email, this.location, this.dob) {
@@ -425,6 +422,7 @@ class FamilyMember{
     object['dob'] = member.dob.millisecondsSinceEpoch;
     object['assessmentStatus'] = AssessmentStatus.toMap(member.assessmentStatus);
     object['isDirectoryMember'] = member.isDirectoryMember;
+    object['UTA'] = member.UTA;
 
     if(member.verification != null) {
       object['verification'] = { 
@@ -472,6 +470,9 @@ class FamilyMember{
     }
     if(object['isDirectoryMember'] == false) {
       ret.isDirectoryMember = false;
+    }
+    if(object['UTA'] == true) {
+      ret.UTA = true;
     }
     ret.assessmentStatus = assessmentStatus;
     ret.addPhone(phone);

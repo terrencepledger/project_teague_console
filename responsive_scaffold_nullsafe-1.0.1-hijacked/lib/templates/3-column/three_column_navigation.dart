@@ -1,11 +1,10 @@
 import 'dart:developer' as developer show log;
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 import 'common/index.dart';
 
+// ignore: must_be_immutable
 class ThreeColumnNavigation extends StatefulWidget {
   ThreeColumnNavigation({
     Key? key,
@@ -308,6 +307,7 @@ class MenuButton extends StatelessWidget {
   })   : _scaffoldKey = scaffoldKey,
         super(key: key);
 
+  // ignore: unused_field
   final GlobalKey<ScaffoldState> _scaffoldKey;
 
   @override
