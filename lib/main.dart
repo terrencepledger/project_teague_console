@@ -150,13 +150,16 @@ class _MyHomePageState extends State<MyHomePage> {
               }
               return compared;
             case MemberSort.Unregistered:
-              if(!b.assessmentStatus.created & !a.assessmentStatus.created || a.assessmentStatus.created & b.assessmentStatus.created) {
+              if(getTag(b) == "Unregistered" && getTag(a) == "Unregistered") {
                 return compared;
               }
-              else if (!b.assessmentStatus.created) {
+              else if (getTag(b) == "Unregistered") {
                 return 1;
               }
-              return -1;
+              else if(getTag(a) == "Unregistered") {
+                return -1;
+              }
+              return compared;
             case MemberSort.Reverse_Alphabetical_Order:
               return compared * -1;
             case MemberSort.UTA:
@@ -812,7 +815,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             count = registered;
                             break;
                           case MemberSort.Unregistered:
-                            count = members.length - registered;
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "Unregistered" ? ++previousValue : previousValue);
                             break;
                           case MemberSort.Paid:
                             count = members.fold(0, (previousValue, member) => getTag(member) == "Paid" ? ++previousValue : previousValue);
