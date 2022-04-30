@@ -132,7 +132,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
    
   void sortMembers() {
-  //TODO: Add in new sort cases (Paid, Paying, UTA)
     setState(() {
       members.sort(
         (a, b) {
@@ -150,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 return 1;
               }
               return compared;
-            case MemberSort.Not_Registered:
+            case MemberSort.Unregistered:
               if(!b.assessmentStatus.created & !a.assessmentStatus.created || a.assessmentStatus.created & b.assessmentStatus.created) {
                 return compared;
               }
@@ -160,6 +159,39 @@ class _MyHomePageState extends State<MyHomePage> {
               return -1;
             case MemberSort.Reverse_Alphabetical_Order:
               return compared * -1;
+            case MemberSort.UTA:
+              if(getTag(b) == "U.T.A" && getTag(a) == "U.T.A") {
+                return compared;
+              }
+              else if (getTag(b) == "U.T.A") {
+                return 1;
+              }
+              else if(getTag(a) == "U.T.A") {
+                return -1;
+              }
+              return compared;
+            case MemberSort.Paying:
+              if(getTag(b) == "Paying" && getTag(a) == "Paying") {
+                return compared;
+              }
+              else if (getTag(b) == "Paying") {
+                return 1;
+              }
+              else if(getTag(a) == "Paying") {
+                return -1;
+              }
+              return compared;
+            case MemberSort.Paid:
+              if(getTag(b) == "Paid" && getTag(a) == "Paid") {
+                return compared;
+              }
+              else if (getTag(b) == "Paid") {
+                return 1;
+              }
+              else if(getTag(a) == "Paid") {
+                return -1;
+              }
+              return compared;
             default:
               return compared;
           }
@@ -281,6 +313,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     //FIXME: Navigation via member button tap from assessment is inconsistent
+    // OH PROBABLY HAS TO DO WITH ORDER CHANGING DUE TO SORT! Maybe...
     return ThreeColumnNavigation(
       updateFunc: () {
         loadMembers();
@@ -760,25 +793,55 @@ class _MyHomePageState extends State<MyHomePage> {
               children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: IconButton(
+                  child: DropdownButton<MemberSort>(
+                    value: sorting,
                     icon: const Icon(Icons.filter_list),
-                    onPressed: () {
+                    onChanged: (newSortValue) {
                       setState(() {
-                        final nextIndex = (sorting.index + 1) % MemberSort.values.length;
-                        sorting = MemberSort.values[nextIndex];
-                        ScaffoldMessenger.of(context).clearSnackBars();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Sorted by ${sorting.name.toString().split('_').join(" ")}"))
-                        );
+                        if(newSortValue != null) {
+                          sorting = newSortValue;
+                        }
                         sortMembers();
                       });
                     },
-                  ),
+                    items: MemberSort.values.map(
+                      (sortValue) {
+                        int count;
+                        switch (sortValue) {
+                          case MemberSort.Registered:
+                            count = registered;
+                            break;
+                          case MemberSort.Unregistered:
+                            count = members.length - registered;
+                            break;
+                          case MemberSort.Paid:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "Paid" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.Paying:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "Paying" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.UTA:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "U.T.A" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.Reverse_Alphabetical_Order:
+                          case MemberSort.Alphabetical_Order:
+                          default:
+                            count = members.length;
+                        }
+
+                        return DropdownMenuItem(
+                          value: sortValue, 
+                          child: Text(
+                            sortValue.name.split('_').join(' ') + ": " + count.toString() 
+                          )
+                        );
+                      }
+                    ).toList()
+                  )
                 ),
                 IconButton(
                   icon: const Icon(Icons.email),
                   onPressed: () {
-                    // set up the buttons
                     Widget cancelButton = TextButton(
                       child: const Text("Cancel"),
                       onPressed:  () {
@@ -792,7 +855,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         emailUnregistered();
                       },
                     );
-                    // set up the AlertDialog
                     AlertDialog alert = AlertDialog(
                       title: const Text("Unregistered Reminder Email"),
                       content: const Text("Are you sure you would like to send a reminder to new unregistered users?"),

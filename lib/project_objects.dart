@@ -29,7 +29,7 @@ enum FamilyMemberTier {
 
 enum MemberSort {
   Alphabetical_Order, Reverse_Alphabetical_Order,
-  Paid, Paying, Registered, Not_Registered, UTA
+  Paid, Paying, Registered, Unregistered, UTA
 }
 
 class InvoiceLoadException implements Exception {
