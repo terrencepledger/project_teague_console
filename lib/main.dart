@@ -808,6 +808,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Padding(
                   padding: const EdgeInsets.all(5.0),
                   child: DropdownButton<MemberSort>(
+                    dropdownColor: Colors.blue,
                     value: sorting,
                     icon: const Icon(
                       Icons.filter_list,
