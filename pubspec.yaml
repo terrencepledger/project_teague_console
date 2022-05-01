@@ -46,6 +46,7 @@ dependencies:
   mailto: ^2.0.0
   url_launcher: ^6.0.18
   loader_overlay: ^2.0.6
+  pdf: ^3.7.4
 
 dev_dependencies:
   flutter_test:

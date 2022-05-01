@@ -6,12 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
-import 'package:mailto/mailto.dart';
 import 'package:project_teague_console/paypal.dart';
 import 'package:project_teague_console/project_objects.dart';
 import 'package:responsive_scaffold_nullsafe/responsive_scaffold.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
+import 'dart:typed_data';
+import 'dart:html' as html;
+import 'dart:js' as js;
 
 void main() {
   if (firebase.apps.isEmpty) {
@@ -57,6 +58,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   DatabaseReference db = database().ref("members");
+  late Report report;
   late Paypal paypal;
 
   MemberSort sorting = MemberSort.Alphabetical_Order;
@@ -207,8 +209,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void loadInvoices() {
     paypal.getInvoices(
-      (List<Invoice> temp, int givenCount) {
+      (List<Invoice> temp, Report givenReport, int givenCount) {
         setState(() {
+          report = givenReport;
           invoices = temp;
           assessmentCount = givenCount;
         });
@@ -244,52 +247,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void emailUnregistered() async {
+  Future<void> showReport() async {
 
-    Map<String, List<String>> emails = {};
+    Uint8List pdfInBytes = await report.getPdf().save();
+    final blob = html.Blob([pdfInBytes], 'application/pdf');
+    final url = html.Url.createObjectUrlFromBlob(blob);
 
-    for (FamilyMember member in members) {
-      
-      if(member.assessmentStatus.created) {
-        continue;
-      }
-
-
-      if(!emails.keys.contains(member.email)) {
-        if(!member.isDirectoryMember) {
-          continue;
-        }
-        emails[member.email] = [member.name];
-      }
-      else {
-        emails[member.email]!.add(member.name);
-      }
-
-    }
-
-    final mailToLink = Mailto(
-      bcc: emails.keys.toList(),
-      subject: "Incomplete Teague Reunion Registration",
-      body: """<p>Hello, if you are receiving this email that means you have not finished registration for the 2022 Teague Family Reunion. You may have created an account, but did not create your assessment invoice. Don&apos;t worry, creating the invoice does not mean you have to pay yet! You are welcome to make payments up until the reunion, but we encourage you to finish your registration ASAP.</p>
-        <p>To finish registering, navigate to <a href="http://kcteague.com">kcteague.com</a>. You will be asked to log in with your Gmail account. You may also be asked to select your name from a list of family members. After doing this, click the Registration tab from the menu at the top. From here on, just follow the instructions at the top of the page!</p>
-        <p>If you have any questions, please reach out to <strong>Terrence Pledger at <a href="mailto:8.tpledger@kscholars.org">8.tpledger@kscholars.org</a>&nbsp;</strong>or <strong>Marcie Pledger at (913) 710-0766</strong>.&nbsp;</p>
-        <p>Thanks!</p>"""
-    );
-     
-    String snackBarMsg;
-    try {
-      await launch('$mailToLink');
-      snackBarMsg = "Launched Email";
-    }
-    catch(e) {
-      snackBarMsg = "Launch Error: ${e.toString()}";
-    }
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(snackBarMsg),
-      )
-    );
+    js.context.callMethod('open', [url]);
 
   }
 
@@ -330,6 +294,47 @@ class _MyHomePageState extends State<MyHomePage> {
           label: Text('Assessments $assessmentCount/${invoices.length}'),
           icon: const Icon(Icons.attach_money),
           itemCount: invoices.length,
+          bottomAppBar: BottomAppBar(
+            elevation: 1,
+            color: Theme.of(context).primaryColor,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.request_page_outlined),
+                  onPressed: () {
+                    Widget cancelButton = TextButton(
+                      child: const Text("Cancel"),
+                      onPressed:  () {
+                        Navigator.of(context).pop();
+                      },
+                    );
+                    Widget continueButton = TextButton(
+                      child: const Text("Continue"),
+                      onPressed:  () {
+                        Navigator.of(context).pop();
+                        showReport();
+                      },
+                    );
+                    AlertDialog alert = AlertDialog(
+                      title: const Text("Create Finance Report"),
+                      content: const Text("Would you like to create a new finance report?"),
+                      actions: [
+                        cancelButton,
+                        continueButton,
+                      ],
+                    );
+                    // show the dialog
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return alert;
+                      },
+                    );
+                  },
+                )
+              ],
+            ),
+          ),
           itemBuilder: (context, index, selected) {
             if(index > invoices.length) {index = 0;}
             if(invoices.isEmpty) {
@@ -791,90 +796,55 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
           bottomAppBar: BottomAppBar(
+            color: Theme.of(context).primaryColor,
             elevation: 1,
             child: Row(
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: DropdownButton<MemberSort>(
-                    value: sorting,
-                    icon: const Icon(Icons.filter_list),
-                    onChanged: (newSortValue) {
-                      setState(() {
-                        if(newSortValue != null) {
-                          sorting = newSortValue;
-                        }
-                        sortMembers();
-                      });
-                    },
-                    items: MemberSort.values.map(
-                      (sortValue) {
-                        int count;
-                        switch (sortValue) {
-                          case MemberSort.Registered:
-                            count = registered;
-                            break;
-                          case MemberSort.Unregistered:
-                            count = members.fold(0, (previousValue, member) => getTag(member) == "Unregistered" ? ++previousValue : previousValue);
-                            break;
-                          case MemberSort.Paid:
-                            count = members.fold(0, (previousValue, member) => getTag(member) == "Paid" ? ++previousValue : previousValue);
-                            break;
-                          case MemberSort.Paying:
-                            count = members.fold(0, (previousValue, member) => getTag(member) == "Paying" ? ++previousValue : previousValue);
-                            break;
-                          case MemberSort.UTA:
-                            count = members.fold(0, (previousValue, member) => getTag(member) == "U.T.A" ? ++previousValue : previousValue);
-                            break;
-                          case MemberSort.Reverse_Alphabetical_Order:
-                          case MemberSort.Alphabetical_Order:
-                          default:
-                            count = members.length;
-                        }
-
-                        return DropdownMenuItem(
-                          value: sortValue, 
-                          child: Text(
-                            sortValue.name.split('_').join(' ') + ": " + count.toString() 
-                          )
-                        );
+                DropdownButton<MemberSort>(
+                  value: sorting,
+                  icon: const Icon(Icons.filter_list),
+                  onChanged: (newSortValue) {
+                    setState(() {
+                      if(newSortValue != null) {
+                        sorting = newSortValue;
                       }
-                    ).toList()
-                  )
-                ),
-                IconButton(
-                  icon: const Icon(Icons.email),
-                  onPressed: () {
-                    Widget cancelButton = TextButton(
-                      child: const Text("Cancel"),
-                      onPressed:  () {
-                        Navigator.of(context).pop();
-                      },
-                    );
-                    Widget continueButton = TextButton(
-                      child: const Text("Continue"),
-                      onPressed:  () {
-                        Navigator.of(context).pop();
-                        emailUnregistered();
-                      },
-                    );
-                    AlertDialog alert = AlertDialog(
-                      title: const Text("Unregistered Reminder Email"),
-                      content: const Text("Are you sure you would like to send a reminder to new unregistered users?"),
-                      actions: [
-                        cancelButton,
-                        continueButton,
-                      ],
-                    );
-                    // show the dialog
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return alert;
-                      },
-                    );
+                      sortMembers();
+                    });
                   },
-                )
+                  items: MemberSort.values.map(
+                    (sortValue) {
+                      int count;
+                      switch (sortValue) {
+                        case MemberSort.Registered:
+                          count = registered;
+                          break;
+                        case MemberSort.Unregistered:
+                          count = members.fold(0, (previousValue, member) => getTag(member) == "Unregistered" ? ++previousValue : previousValue);
+                          break;
+                        case MemberSort.Paid:
+                          count = members.fold(0, (previousValue, member) => getTag(member) == "Paid" ? ++previousValue : previousValue);
+                          break;
+                        case MemberSort.Paying:
+                          count = members.fold(0, (previousValue, member) => getTag(member) == "Paying" ? ++previousValue : previousValue);
+                          break;
+                        case MemberSort.UTA:
+                          count = members.fold(0, (previousValue, member) => getTag(member) == "U.T.A" ? ++previousValue : previousValue);
+                          break;
+                        case MemberSort.Reverse_Alphabetical_Order:
+                        case MemberSort.Alphabetical_Order:
+                        default:
+                          count = members.length;
+                      }
+
+                      return DropdownMenuItem(
+                        value: sortValue, 
+                        child: Text(
+                          sortValue.name.split('_').join(' ') + ": " + count.toString() 
+                        )
+                      );
+                    }
+                  ).toList()
+                ),
               ],
             ),
           ),

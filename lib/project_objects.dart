@@ -3,6 +3,7 @@
 import 'package:firebase/firebase.dart';
 import 'package:intl/intl.dart';
 import 'package:quiver/core.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 enum TshirtSize { 
   Youth_XS, Youth_S, Youth_M, Youth_L, Youth_XL,
@@ -273,31 +274,6 @@ class InvoiceItems{
 
   }
 
-  double getTotal() {
-
-    double total = 0;
-
-    for (var member in tickets) {
-      double toAdd = 0;
-      switch (member!.tier) {
-        case FamilyMemberTier.Adult:
-          toAdd = 100;
-          break;
-        case FamilyMemberTier.Child:
-          toAdd = 30;
-          break;
-        case FamilyMemberTier.Baby:
-          toAdd = 10;
-          break;
-        default:
-      }
-      total += toAdd;
-    }
-
-    return total;
-
-  }
-
   static Future<InvoiceItems> fromMap(List<Map<String, dynamic>> object) async {
 
     InvoiceItems items = InvoiceItems();
@@ -517,6 +493,74 @@ class Payment {
     return Payment(id, date, amt);
 
   }
+
+}
+
+class Report {
+
+  int adults = 0;
+  int children = 0;
+  int separateTshirts = 0;
+  double assessmentCost = 0;
+  double paid = 0;
+  double numPayments = 0;
+
+  var pdf = pw.Document();  
+
+  Report();
+
+  void addInvoice(Invoice inv) {
+
+    for (var member in inv.items.tickets) {
+      
+      switch (member!.tier) {
+        case FamilyMemberTier.Adult:
+          adults++;
+          break;
+        case FamilyMemberTier.Child:
+          children++;
+          break;
+        case FamilyMemberTier.Baby:
+          separateTshirts++;
+          break;
+        default:
+      }
+
+    }
+
+    assessmentCost += inv.amt;
+    paid += inv.paid;
+    numPayments += inv.payments.length;
+
+  }
+
+  pw.Document getPdf() {
+    
+    final currencyFormat = NumberFormat("#,##0.00", "en_US");
+
+    var page = pw.Page(
+      build: (context) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text("KC Teague Family Reunion 2022", style: pw.Theme.of(context).header3),
+          pw.Text("Financial Report: ${DateFormat('MMM d, yyyy').format(DateTime.now())}", style: pw.Theme.of(context).header4, textAlign: pw.TextAlign.left),
+          pw.Text("\n"), pw.Text("\n"), pw.Text("\n"),
+          pw.Text("Current Totals", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Adults: $adults", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Children: $children", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Separate T-Shirt Orders (inc. babies): $separateTshirts", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Assessments Amount: \$${currencyFormat.format(assessmentCost)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Paid: \$${currencyFormat.format(paid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("# of Payments: $numPayments", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left),
+        ]
+      ),
+    );
+
+    pdf.addPage(page);
+    
+    return pdf;
+
+  }  
 
 }
 
