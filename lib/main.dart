@@ -133,6 +133,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
    
+  void sortInvoices() {
+    //TODO: Implement sort for invoices based on paying, sent, complete
+  }
+
   void sortMembers() {
     setState(() {
       members.sort(
@@ -299,6 +303,7 @@ class _MyHomePageState extends State<MyHomePage> {
             color: Theme.of(context).primaryColor,
             child: Row(
               children: [
+                //TODO: Add invoice sort dropdown 
                 IconButton(
                   icon: const Icon(Icons.request_page_outlined),
                   onPressed: () {
@@ -800,50 +805,57 @@ class _MyHomePageState extends State<MyHomePage> {
             elevation: 1,
             child: Row(
               children: <Widget>[
-                DropdownButton<MemberSort>(
-                  value: sorting,
-                  icon: const Icon(Icons.filter_list),
-                  onChanged: (newSortValue) {
-                    setState(() {
-                      if(newSortValue != null) {
-                        sorting = newSortValue;
-                      }
-                      sortMembers();
-                    });
-                  },
-                  items: MemberSort.values.map(
-                    (sortValue) {
-                      int count;
-                      switch (sortValue) {
-                        case MemberSort.Registered:
-                          count = registered;
-                          break;
-                        case MemberSort.Unregistered:
-                          count = members.fold(0, (previousValue, member) => getTag(member) == "Unregistered" ? ++previousValue : previousValue);
-                          break;
-                        case MemberSort.Paid:
-                          count = members.fold(0, (previousValue, member) => getTag(member) == "Paid" ? ++previousValue : previousValue);
-                          break;
-                        case MemberSort.Paying:
-                          count = members.fold(0, (previousValue, member) => getTag(member) == "Paying" ? ++previousValue : previousValue);
-                          break;
-                        case MemberSort.UTA:
-                          count = members.fold(0, (previousValue, member) => getTag(member) == "U.T.A" ? ++previousValue : previousValue);
-                          break;
-                        case MemberSort.Reverse_Alphabetical_Order:
-                        case MemberSort.Alphabetical_Order:
-                        default:
-                          count = members.length;
-                      }
+                Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: DropdownButton<MemberSort>(
+                    value: sorting,
+                    icon: const Icon(
+                      Icons.filter_list,
+                      color: Colors.white,
+                    ),
+                    onChanged: (newSortValue) {
+                      setState(() {
+                        if(newSortValue != null) {
+                          sorting = newSortValue;
+                        }
+                        sortMembers();
+                      });
+                    },
+                    items: MemberSort.values.map(
+                      (sortValue) {
+                        int count;
+                        switch (sortValue) {
+                          case MemberSort.Registered:
+                            count = registered;
+                            break;
+                          case MemberSort.Unregistered:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "Unregistered" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.Paid:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "Paid" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.Paying:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "Paying" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.UTA:
+                            count = members.fold(0, (previousValue, member) => getTag(member) == "U.T.A" ? ++previousValue : previousValue);
+                            break;
+                          case MemberSort.Reverse_Alphabetical_Order:
+                          case MemberSort.Alphabetical_Order:
+                          default:
+                            count = members.length;
+                        }
 
-                      return DropdownMenuItem(
-                        value: sortValue, 
-                        child: Text(
-                          sortValue.name.split('_').join(' ') + ": " + count.toString() 
-                        )
-                      );
-                    }
-                  ).toList()
+                        return DropdownMenuItem(
+                          value: sortValue, 
+                          child: Text(
+                            "Sort by: " + sortValue.name.split('_').join(' ') + ": " + count.toString(),
+                            style: const TextStyle(color: Colors.white), 
+                          )
+                        );
+                      }
+                    ).toList()
+                  ),
                 ),
               ],
             ),
