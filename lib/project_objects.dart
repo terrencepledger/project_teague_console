@@ -542,6 +542,7 @@ class Report {
   int adults = 0;
   int children = 0;
   int babies = 0;
+  int quickTally = 0;
   double assessmentAmtTotal = 0;
   double assessmentAmtpaid = 0;
   double numPayments = 0;
@@ -580,6 +581,8 @@ class Report {
               break;
             default:
           }
+          shirts.addShirt(member.tSize!);
+          quickTally++;
         }
         else {
           utaInvoice = true;
@@ -594,7 +597,6 @@ class Report {
   }
 
   pw.Document getPdf() {
-    
     final currencyFormat = NumberFormat("#,##0.00", "en_US");
 
     var page = pw.Page(
@@ -604,7 +606,7 @@ class Report {
           pw.Text("KC Teague Family Reunion 2022", style: pw.Theme.of(context).header3),
           pw.Text("Financial Report: ${DateFormat('MMM d, yyyy').format(DateTime.now())}", style: pw.Theme.of(context).header4, textAlign: pw.TextAlign.left),
           pw.Text("\n"), pw.Text("\n"), pw.Text("\n"),
-          pw.Text("Registrations", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Registration Numbers", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Adults: $adults", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Children: $children", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Babies: $babies", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
@@ -612,25 +614,25 @@ class Report {
           pw.Text("Assessments Amount Paid: \$${currencyFormat.format(assessmentAmtpaid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("# of Payments: $numPayments", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left),
           pw.Text("\n"), pw.Text("\n"),
-          pw.Text("T-Shirt Orders", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("# of Orders: $shirtOrders", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("# of Shirts: ${shirts.getShirts().length}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("\n"),
+          pw.Text("T-Shirts", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+          // pw.Text("# of Orders: $shirtOrders", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          // pw.Text("# of Shirts: ${shirts.getShirts().length}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          // pw.Text("\n"),
           pw.Text("Smalls: ${shirts.quantities[TshirtSize.S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Mediums: ${shirts.quantities[TshirtSize.M]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Larges: ${shirts.quantities[TshirtSize.L]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("XL's: ${shirts.quantities[TshirtSize.XL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("2X's: ${shirts.quantities[TshirtSize.XXL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("3X's: ${shirts.quantities[TshirtSize.XXL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("4X's: ${shirts.quantities[TshirtSize.S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("3X's: ${shirts.quantities[TshirtSize.XXXL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("4X's: ${shirts.quantities[TshirtSize.XXXXL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Youth XS's: ${shirts.quantities[TshirtSize.Youth_XS]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Youth Smalls: ${shirts.quantities[TshirtSize.Youth_S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Youth Mediums: ${shirts.quantities[TshirtSize.Youth_M]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Youth Larges: ${shirts.quantities[TshirtSize.Youth_L]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Youth XL's: ${shirts.quantities[TshirtSize.Youth_XL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("\n"),
-          pw.Text("Orders Amount Owed: \$${currencyFormat.format(shirtOrdersAmtTotal)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("Orders Amount Paid: \$${currencyFormat.format(shirtOrdersAmtPaid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          // pw.Text("\n"),
+          // pw.Text("Orders Amount Owed: \$${currencyFormat.format(shirtOrdersAmtTotal)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          // pw.Text("Orders Amount Paid: \$${currencyFormat.format(shirtOrdersAmtPaid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
         ]
       ),
     );
