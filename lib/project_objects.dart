@@ -154,7 +154,7 @@ class Invoice{
     bool viewed = object["viewed_by_recipient"] == "true";
 
     FamilyMember? hoh;
-    if(details["memo"] != null) {
+    if(details["memo"] != null && details["memo"].toString().contains("Head of Household ID")) {
       await database().ref("members").child(details["memo"].toString().split(': ').last).once('value')
       .then((query) {
         var val = query.snapshot.val();
@@ -171,6 +171,10 @@ class Invoice{
         }
       });
     }
+    else if(details["memo"].toString().contains("Order Info")){
+      List<String> orderInfo = details["memo"].toString().split("Order Info: ").last.split(", ");
+      hoh = FamilyMember("T-Shirts (${orderInfo[1]})", orderInfo[2], Location("", ""), DateTime.now());
+    }
 
     double amt = double.parse(object["amount"]["value"]); 
 
@@ -183,6 +187,8 @@ class Invoice{
 }
 
 class InvoiceItems{
+
+  TshirtOrder shirtsOrder = TshirtOrder();
 
   List<FamilyMember?> tickets = [];
   // Map<Activity, List<FamilyMember>> activities = {};
@@ -203,7 +209,42 @@ class InvoiceItems{
   List<Map<String, Object>> createItemList() {
 
     List<Map<String, Object>> ret = [];
+    for (var size in shirtsOrder.quantities.keys) { 
+      // if(size == null) {
+      //   continue;
+      // }
 
+      Map<String, Object> temp = {};
+
+      String sizeName = size.name.split('_').join(' ');
+
+      temp['name'] = "T-Shirt Order Form Purchase";
+      temp['quantity'] = shirtsOrder.quantities[size] as Object;
+      temp['description'] = "T-Shirt Size: $sizeName x ${temp['quantity']}";
+      
+      int cost;
+      switch (size) {
+        case TshirtSize.Youth_XS:
+        case TshirtSize.Youth_XL:
+        case TshirtSize.Youth_S:
+        case TshirtSize.Youth_M:
+        case TshirtSize.Youth_L:
+          cost = 10;
+          break;
+        default:
+          cost = 15;
+          break;
+      }
+
+      temp["unit_amount"] = {
+        "currency_code": "USD",
+        "value": cost.toStringAsFixed(2)
+      };
+
+      ret.add(temp);
+
+    }
+    
     for (var theMember in tickets) {
 
       Map<String, Object> temp = {}; 
@@ -500,38 +541,56 @@ class Report {
 
   int adults = 0;
   int children = 0;
-  int separateTshirts = 0;
-  double assessmentCost = 0;
-  double paid = 0;
+  int babies = 0;
+  double assessmentAmtTotal = 0;
+  double assessmentAmtpaid = 0;
   double numPayments = 0;
+
+  TshirtOrder shirts = TshirtOrder();
+  double shirtOrders = 0;
+  double shirtOrdersAmtTotal = 0;
+  double shirtOrdersAmtPaid = 0;
 
   var pdf = pw.Document();  
 
   Report();
 
   void addInvoice(Invoice inv) {
-
-    for (var member in inv.items.tickets) {
-      
-      switch (member!.tier) {
-        case FamilyMemberTier.Adult:
-          adults++;
-          break;
-        case FamilyMemberTier.Child:
-          children++;
-          break;
-        case FamilyMemberTier.Baby:
-          separateTshirts++;
-          break;
-        default:
+    bool utaInvoice = false;
+    if (inv.items.shirtsOrder.getShirts().isNotEmpty) {
+      for (var shirt in inv.items.shirtsOrder.getShirts()) {
+        shirts.addShirt(shirt);
       }
-
+      shirtOrders++;
+      shirtOrdersAmtTotal += inv.items.shirtsOrder.getTotal();
+      shirtOrdersAmtPaid += inv.paid;
     }
-
-    assessmentCost += inv.amt;
-    paid += inv.paid;
-    numPayments += inv.payments.length;
-
+    else {
+      for (var member in inv.items.tickets) {
+        if (!member!.UTA) {
+          switch (member.tier) {
+            case FamilyMemberTier.Adult:
+              adults++;
+              break;
+            case FamilyMemberTier.Child:
+              children++;
+              break;
+            case FamilyMemberTier.Baby:
+              babies++;
+              break;
+            default:
+          }
+        }
+        else {
+          utaInvoice = true;
+        }
+      }
+      if(!utaInvoice) {
+        assessmentAmtTotal += inv.amt;
+        assessmentAmtpaid += inv.paid;
+        numPayments += inv.payments.length;
+      }
+    }    
   }
 
   pw.Document getPdf() {
@@ -545,13 +604,33 @@ class Report {
           pw.Text("KC Teague Family Reunion 2022", style: pw.Theme.of(context).header3),
           pw.Text("Financial Report: ${DateFormat('MMM d, yyyy').format(DateTime.now())}", style: pw.Theme.of(context).header4, textAlign: pw.TextAlign.left),
           pw.Text("\n"), pw.Text("\n"), pw.Text("\n"),
-          pw.Text("Current Totals", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Registrations", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Adults: $adults", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Children: $children", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("Separate T-Shirt Orders (inc. babies): $separateTshirts", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("Assessments Amount: \$${currencyFormat.format(assessmentCost)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          pw.Text("Paid: \$${currencyFormat.format(paid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Babies: $babies", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Assessments Amount Owed: \$${currencyFormat.format(assessmentAmtTotal)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Assessments Amount Paid: \$${currencyFormat.format(assessmentAmtpaid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("# of Payments: $numPayments", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left),
+          pw.Text("\n"), pw.Text("\n"),
+          pw.Text("T-Shirt Orders", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("# of Orders: $shirtOrders", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("# of Shirts: ${shirts.getShirts().length}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("\n"),
+          pw.Text("Smalls: ${shirts.quantities[TshirtSize.S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Mediums: ${shirts.quantities[TshirtSize.M]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Larges: ${shirts.quantities[TshirtSize.L]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("XL's: ${shirts.quantities[TshirtSize.XL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("2X's: ${shirts.quantities[TshirtSize.XXL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("3X's: ${shirts.quantities[TshirtSize.XXL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("4X's: ${shirts.quantities[TshirtSize.S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Youth XS's: ${shirts.quantities[TshirtSize.Youth_XS]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Youth Smalls: ${shirts.quantities[TshirtSize.Youth_S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Youth Mediums: ${shirts.quantities[TshirtSize.Youth_M]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Youth Larges: ${shirts.quantities[TshirtSize.Youth_L]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Youth XL's: ${shirts.quantities[TshirtSize.Youth_XL]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("\n"),
+          pw.Text("Orders Amount Owed: \$${currencyFormat.format(shirtOrdersAmtTotal)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Orders Amount Paid: \$${currencyFormat.format(shirtOrdersAmtPaid)}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
         ]
       ),
     );
@@ -561,6 +640,95 @@ class Report {
     return pdf;
 
   }  
+
+}
+
+class TshirtDelivery {
+
+  bool needDelivery = true;
+
+  String address = "";
+
+
+}
+
+class TshirtOrder {
+
+  late String id;
+
+  TshirtDelivery delivery = TshirtDelivery();
+  Map<TshirtSize, int> quantities = {};
+  final List<TshirtSize> _shirts = [];
+
+  String orderName = "";
+  String orderNumber = "";
+  String orderEmail = "";
+
+  TshirtOrder() {
+    id = DateTime.now().millisecondsSinceEpoch.toString();
+  }
+
+  void addShirt(TshirtSize shirt) {
+
+    _shirts.add(shirt);
+
+    int x = 0;
+    for (var _shirt in _shirts) { 
+      if (shirt == _shirt) {
+        x++;
+      }
+    }
+
+    quantities[shirt] = x;
+
+  }
+
+  void removeShirt(TshirtSize shirt) {
+
+    _shirts.remove(shirt);
+
+    int x = 0;
+    for (var _shirt in _shirts) { 
+      if (shirt == _shirt) {
+        x++;
+      }
+    }
+
+    quantities[shirt] = x;
+
+  }
+
+  double getTotal() {
+
+    double total = 0;
+    for (TshirtSize shirt in _shirts) {
+      
+      // if(shirt==null) {
+      //   continue;
+      // }
+      
+      switch (shirt) {
+        case TshirtSize.Youth_XS:
+        case TshirtSize.Youth_XL:
+        case TshirtSize.Youth_S:
+        case TshirtSize.Youth_M:
+        case TshirtSize.Youth_L:
+          total += 10;
+          break;
+        default:
+          total += 15;
+          break;
+      }
+
+    }
+
+    return total;
+
+  }
+
+  List<TshirtSize> getShirts() {
+    return _shirts;
+  }
 
 }
 

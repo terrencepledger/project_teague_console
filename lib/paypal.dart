@@ -151,9 +151,25 @@ class Paypal {
             else {
               invoice.paid = 0;
             }
-
+            InvoiceItems items = InvoiceItems();
             for (var item in detailedInvObj["items"]) {
               switch (item["name"]) {
+                case "T-Shirt Order Form Purchase":
+                  TshirtSize size = TshirtSize.values.firstWhere((element) => element.name == item["description"].toString().split('T-Shirt Size: ').last.split(' ').join('_'));
+                  for (var i = 0; i < int.parse(item['quantity']); i++) {
+                    items.shirtsOrder.addShirt(size);
+                  }
+                  List<String> orderInfo = detailedInvObj["detail"]["memo"].toString().split('Order Info: ').last.split(', ');
+                  items.shirtsOrder.id = orderInfo[0];
+                  items.shirtsOrder.orderName = orderInfo[1];
+                  items.shirtsOrder.orderEmail = orderInfo[2];
+                  items.shirtsOrder.orderNumber = orderInfo[3];
+                  if(orderInfo[4] != "null") {
+                    items.shirtsOrder.delivery.needDelivery = true;
+                    items.shirtsOrder.delivery.address = orderInfo[4];
+                  }
+                  invoice.items = items;
+                  break;
                 case "T-Shirt Purchase":
                 case "Child Assessment":
                 case "Adult Assessment":

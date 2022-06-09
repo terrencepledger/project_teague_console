@@ -565,7 +565,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                               Padding(
                                                 padding: const EdgeInsets.all(8.0),
                                                 child: Center(child: Text(
-                                                  "\$" + double.parse((invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["unit_amount"] as Map)["value"].toString()).toStringAsFixed(2),
+                                                  "\$" + ( 
+                                                    double.parse((invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["unit_amount"] as Map)["value"].toString())
+                                                    * double.parse(invoices.elementAt(index).items.createItemList().elementAt(memberIndex)["quantity"].toString())
+                                                  ).toStringAsFixed(2),
                                                   textAlign: TextAlign.center,
                                                   style: const TextStyle(color: Colors.black),
                                                 )),
