@@ -336,6 +336,53 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     );
                   },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.email_sharp),
+                  onPressed: () {
+                    Widget cancelButton = TextButton(
+                      child: const Text("Cancel"),
+                      onPressed:  () {
+                        Navigator.of(context).pop();
+                      },
+                    );
+                    Widget continueButton = TextButton(
+                      child: const Text("Continue"),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        for (var invoice in invoices) {
+                          if(invoice.status != InvoiceStatus.Paid && !invoice.hoh!.UTA) {
+                            paypal.sendReminder(context, invoice, 
+                              (String code, String reason) {
+                                ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                                  SnackBar(
+                                    content: Text("Unable to Send Reminder. Contact Terrence Pledger with code $code - $reason"),
+                                    duration: const Duration(seconds: 8),
+                                  )
+                                );
+                              }
+                            );
+                          }
+                        }
+                      },
+                    );
+                    AlertDialog alert = AlertDialog(
+                      title: const Text("Send Paypal Invoice Reminder"),
+                      content: const Text("Would you like to send a payment reminder to all head of households?"),
+                      actions: [
+                        cancelButton,
+                        continueButton,
+                      ],
+                    );
+                    // show the dialog
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return alert;
+                      },
+                    );
+                  },
                 )
               ],
             ),
