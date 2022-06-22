@@ -596,6 +596,7 @@ class Report {
     }    
   }
 
+  //TODO: Add T-Shirt Order that lists names and details, also page with all attending members with sizes 
   pw.Document getPdf() {
     final currencyFormat = NumberFormat("#,##0.00", "en_US");
 
@@ -615,9 +616,10 @@ class Report {
           pw.Text("# of Payments: $numPayments", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left),
           pw.Text("\n"), pw.Text("\n"),
           pw.Text("T-Shirts", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+          pw.Text("Total: ${shirts.getShirts().length}", style: pw.Theme.of(context).header5.copyWith(fontStyle: pw.FontStyle.italic), textAlign: pw.TextAlign.left), pw.Text("\n"),
           // pw.Text("# of Orders: $shirtOrders", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           // pw.Text("# of Shirts: ${shirts.getShirts().length}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
-          // pw.Text("\n"),
+          pw.Text("\n"),
           pw.Text("Smalls: ${shirts.quantities[TshirtSize.S]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Mediums: ${shirts.quantities[TshirtSize.M]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
           pw.Text("Larges: ${shirts.quantities[TshirtSize.L]}", style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left), pw.Text("\n"),
