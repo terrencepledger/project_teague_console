@@ -109,7 +109,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   int checkTotalLikely() {
-    return members.length - members.where((member) => member.UTA).length;
+    return members.length - members.where(
+      (member) => getTag(member) == "U.T.A"
+    ).length;
   }
 
   void loadMembers() {
