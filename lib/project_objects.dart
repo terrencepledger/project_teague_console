@@ -1,6 +1,7 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:firebase/firebase.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:quiver/core.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -539,6 +540,54 @@ class Payment {
 
 class Report {
 
+  List<pw.Text> listMembers(pw.Context context) {
+    
+    List<pw.Text> members = [];
+
+    bool alreadySpaced = false;
+    for (var inv in invoices) {
+
+      if(inv.items.shirtsOrder.getShirts().isEmpty) {
+        for (var member in inv.items.tickets) {
+          if(!member!.UTA) {
+            members.add(
+              pw.Text(
+                "${member.name}; ${member.tSize.toString().split('.')[1].split('_').join(" ")}; ${member.location.displayInfo()}\n", 
+                style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left
+              )
+            );
+            alreadySpaced = false;
+          }
+        }
+        if(!alreadySpaced) {
+          members.add(pw.Text("\n"));
+          alreadySpaced = true;
+        }
+      }
+      else {
+        String orderName = "T-Shirt Order: ${inv.hoh?.name.split('(').last.split(")").first}"; 
+        for (var shirt in inv.items.shirtsOrder.getShirts()) {
+         members.add(
+            pw.Text(
+              "$orderName; ${shirt.toString().split('.')[1].split('_').join(" ")}", 
+              style: pw.Theme.of(context).header5, textAlign: pw.TextAlign.left
+            )
+          ); 
+          alreadySpaced = false;
+        }
+        if(!alreadySpaced) {
+          members.add(pw.Text("\n"));
+          alreadySpaced = true;
+        }
+      }
+    }
+
+    return members;
+  
+  }
+
+  List<Invoice> invoices = [];
+
   int adults = 0;
   int children = 0;
   int babies = 0;
@@ -558,6 +607,7 @@ class Report {
 
   void addInvoice(Invoice inv) {
     bool utaInvoice = false;
+    invoices.add(inv);
     if (inv.items.shirtsOrder.getShirts().isNotEmpty) {
       for (var shirt in inv.items.shirtsOrder.getShirts()) {
         shirts.addShirt(shirt);
@@ -592,6 +642,7 @@ class Report {
         assessmentAmtTotal += inv.amt;
         assessmentAmtpaid += inv.paid;
         numPayments += inv.payments.length;
+        
       }
     }    
   }
@@ -600,7 +651,7 @@ class Report {
   pw.Document getPdf() {
     final currencyFormat = NumberFormat("#,##0.00", "en_US");
 
-    var page = pw.Page(
+    var page1 = pw.Page(
       build: (context) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
@@ -639,7 +690,16 @@ class Report {
       ),
     );
 
-    pdf.addPage(page);
+    var page2 = pw.MultiPage(
+      build: (context) => [
+        pw.Text("KC Teague Family Reunion 2022", style: pw.Theme.of(context).header3),
+        pw.Text("Breakdown: ${DateFormat('MMM d, yyyy').format(DateTime.now())}", style: pw.Theme.of(context).header4, textAlign: pw.TextAlign.left),
+        pw.Text("\n"), pw.Text("\n"), pw.Text("\n"),
+        pw.Text("Non-UTA Members", style: pw.Theme.of(context).header4.copyWith(decoration: pw.TextDecoration.underline), textAlign: pw.TextAlign.left), pw.Text("\n"),
+      ] + listMembers(context)
+    );
+    pdf.addPage(page1);
+    pdf.addPage(page2);
     
     return pdf;
 
